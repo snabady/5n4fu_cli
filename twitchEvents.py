@@ -161,11 +161,6 @@ class TwitchEvents:
     async def on_channel_raid():
         pass
 
-    async def prodConn(self):
-        """
-        generate production Connection to Twitch EventSub
-        """
-        pass
 
     async def subCliEventsTEMPO(self):
         """
