@@ -6,7 +6,7 @@
 2. Run:  
    ```sh
    twitch mock-api generate
-3. Copy credentials into a `.env` file (example: `.env_example`)
+3. Copy the credentials u generated into a `.env` file (example: `.env_example`)
 4. Run:  
    ```sh
    twitch mock-api start
