@@ -2,10 +2,12 @@ from twitchAPI.twitch import Twitch, TwitchUser
 from twitchAPI.type import AuthScope
 from twitchAPI.oauth import UserAuthenticator, UserAuthenticationStorageHelper
 from twitchAPI.eventsub.websocket import EventSubWebsocket
+from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent
 from twitchAPI.helper import first
 from typing import Tuple, Optional
 import os
 from dotenv import load_dotenv
+
 TARGET_SCOPES = [
                  AuthScope.MODERATOR_READ_FOLLOWERS,
                  AuthScope.USER_READ_CHAT,
@@ -60,8 +62,7 @@ class TwitchEvents:
     user: Optional[TwitchUser]              = None
 
     def __init__(self, 
-                 use_cli_conn=False, 
-                 send2Overlay=False):
+                 use_cli_conn=False):
         """
         use_cli_conn    bool    default False
                                 if True -> mock-cli is used instead of production
@@ -70,8 +71,7 @@ class TwitchEvents:
         """
         load_dotenv()
         self.use_cli_conn= use_cli_conn
-        self.send2Overlay = send2Overlay
- 
+         
         self.setEnv()
 
             
@@ -150,16 +150,18 @@ class TwitchEvents:
         
         return eventsub, twitch, user
     
-    def setSend2Overlay(self, val: bool):
-        """
-        enables the websocket for overlay
-        """
-        self.send2Overlay = val
+    async def onSubscribe(sel, x: ChannelSubscribeEvent):
+        print('received subscribtion')
+        print(f'{x.to_dict()}')
+        
+    async def on_channel_raid(self, x: ChannelRaidEvent):
+        print(f'received channel raid')
+        print(f'{x.to_dict()}')
+        
 
-    async def onSubscribe():
-        pass
-    async def on_channel_raid():
-        pass
+    async def on_follow(self, x: ChannelFollowEvent):
+        print(f'received follow event')
+        print(f'{x.to_dict()}')
 
 
     async def subCliEventsTEMPO(self):
@@ -180,27 +182,4 @@ class TwitchEvents:
                                                                 self.on_follow)
         print(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket')
 
-    async def subCustomRewardEvents(self):
-        """
-        subscribes to any custom Reward Event
-        """
-        pass
-    
-    async def subGoalEvents(self):
-        """
-        subscribes to any goalevent
-        """
-
-        pass
-
-    async def subPollEvents(self):
-        """
-        subscribes to any Poll related Event
-        """
-        pass
-
-    async def subPredictionEvents(self):
-        """
-        subscribes to any Prediction related Event
-        """
-        pass
+   

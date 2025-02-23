@@ -22,12 +22,12 @@ async def main():
     #async with twitchEvents.TwitchEvents() as tevents:
     #    await tevents.subCliEventsTEMPO()  
     
-    try:
-        while True:
-            await asyncio.sleep(50)
+        try:
+            while True:
+                await asyncio.sleep(50)
          
-    except asyncio.CancelledError:
-        print("cu later OOO")
+        except asyncio.CancelledError:
+            print("cu later OOO")
 
 asyncio.run(main())
 
