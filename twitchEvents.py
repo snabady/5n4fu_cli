@@ -7,6 +7,8 @@ from twitchAPI.helper import first
 from typing import Tuple, Optional
 import os
 from dotenv import load_dotenv
+import logging
+import colorlog
 
 TARGET_SCOPES = [
                  AuthScope.MODERATOR_READ_FOLLOWERS,
@@ -56,7 +58,7 @@ class TwitchEvents:
 
     (c) ChaosQueen 5n4fu
     """
-
+    
     twitch: Optional[Twitch]                = None
     eventsub: Optional[EventSubWebsocket]   = None
     user: Optional[TwitchUser]              = None
@@ -69,6 +71,10 @@ class TwitchEvents:
         send2Overlay    bool    default False
                                 enables websocket to Overlay and sends JSON-Strings from events
         """
+        self.logger = logging.getLogger(__name__)
+        self.add_logger_handler()
+        self.logger.setLevel(logging.DEBUG)
+        
         load_dotenv()
         self.use_cli_conn= use_cli_conn
          
@@ -80,16 +86,33 @@ class TwitchEvents:
             self.eventsub, self.twitch, self.user = await self.climockingConn()
         else:
             self.eventsub, self.twitch, self.user = await self.prodConn()
-        print("aenter")
+        self.logger.debug("aenter")
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         # ??? deconstructor
         await self.eventsub.stop()
         await self.twitch.close()
-        print("aexit")
+        self.logger.debug("aexit")
         return self
     
+    def add_logger_handler(self):
+        handler = colorlog.StreamHandler()
+        formatter = colorlog.ColoredFormatter(
+            '%(asctime)s - %(log_color)s%(levelname)-8s%(reset)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            log_colors={
+                'DEBUG': 'blue',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'bold_red',
+            }
+        )
+
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        
 
     def setEnv(self):
         if self.use_cli_conn:
@@ -128,6 +151,7 @@ class TwitchEvents:
 
         TODO AuthScopes compare || check if normal working
         """
+        self.logger.critical("a worm inserted your console")
         twitch = await Twitch(self.CLI_ID,
                             self.CLI_S,
                             base_url        = self.BASE_URL, 
@@ -137,9 +161,7 @@ class TwitchEvents:
                                  [AuthScope.CHANNEL_READ_SUBSCRIPTIONS], 
                                  auth_base_url=self.AUTH_BASE_URL)
         x = self.CLI_UID
-        print(str(type(auth)))
-        if auth == None:
-            print("auth none")
+
         token = await auth.mock_authenticate(self.CLI_UID)
         await twitch.set_user_authentication(token,
                                              [AuthScope.CHANNEL_READ_SUBSCRIPTIONS])
@@ -150,36 +172,49 @@ class TwitchEvents:
         
         return eventsub, twitch, user
     
-    async def onSubscribe(sel, x: ChannelSubscribeEvent):
-        print('received subscribtion')
-        print(f'{x.to_dict()}')
+    async def onSubscribe(self, x: ChannelSubscribeEvent):
+        """
+        displays the data received by the channel_subscribe Event
+        """
+        self.logger.info('received subscribtion')
+        self.logger.debug(f'{x.event.to_dict()}')
         
     async def on_channel_raid(self, x: ChannelRaidEvent):
-        print(f'received channel raid')
-        print(f'{x.to_dict()}')
+        """
+        displays the data received by the channel_subscribe Event
+        """
+        self.logger.info(f'received channel raid')
+        self.logger.debug(f'{x.event.to_dict()}')
         
 
     async def on_follow(self, x: ChannelFollowEvent):
-        print(f'received follow event')
-        print(f'{x.to_dict()}')
+        """
+        displays the data received by the channel_follow_v2 Event
+        details: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channel-follow-webhook-notification-example
+        relevant parts: x.event.
+        https://dev.twitch.tv/docs/eventsub/eventsub-reference/
+        """
+        self.logger.info(f'received follow event')
+        self.logger.debug(f'{x.event.to_dict()}')
 
 
     async def subCliEventsTEMPO(self):
         """
         currently tested cli stuff, working and useable 
+        also working with your real twitch-app-creds
         """
         self.eventsub.start()
         sub_id = await self.eventsub.listen_channel_subscribe(self.user.id, 
                                                               self.onSubscribe)
-        print(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket')
+        self.logger.info(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket')
 
         raid_id = await self.eventsub.listen_channel_raid(self.on_channel_raid, 
                                                           None,self.user.id)
-        print(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket')
+        self.logger.info(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket')
 
         follow_id =await self.eventsub.listen_channel_follow_v2(self.user.id, 
                                                                 self.user.id, 
                                                                 self.on_follow)
-        print(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket')
+        self.logger.info(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket')
 
    

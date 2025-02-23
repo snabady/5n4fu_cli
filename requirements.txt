@@ -3,3 +3,4 @@ sockets
 twitchApi
 websockets
 dotenv
+colorlog
