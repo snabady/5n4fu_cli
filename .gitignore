@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.py[cod]
+.venv/twitch_cli_test_connection.py
+.myTwitch.py
+user_token.json
