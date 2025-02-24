@@ -1,12 +1,3 @@
-channel.ad_break.begin 
-
-channel.cheer 
-channel.follow 
-
-channel.moderator.add 
-channel.moderator.remove
-
-channel.raid 
 
 channel.shield_mode.begin
 channel.shield_mode.end

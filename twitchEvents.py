@@ -10,46 +10,7 @@ from dotenv import load_dotenv
 import logging
 import colorlog
 import twitch_event_handler as teh
-
-TARGET_SCOPES = [
-                 AuthScope.MODERATOR_READ_FOLLOWERS,
-                 AuthScope.USER_READ_CHAT,
-                 AuthScope.CHANNEL_BOT, 
-                 AuthScope.USER_READ_EMOTES,
-                 AuthScope.CHAT_READ, 
-                 AuthScope.CHAT_EDIT,
-                 AuthScope.CHANNEL_MODERATE,
-                 AuthScope.USER_READ_EMAIL,
-                 AuthScope.MODERATOR_READ_FOLLOWERS,
-                 AuthScope.CHANNEL_MANAGE_POLLS,
-                 AuthScope.CHANNEL_READ_GOALS,
-                 AuthScope.CHANNEL_READ_ADS,
-                 AuthScope.CHANNEL_MODERATE,
-                 AuthScope.USER_BOT,
-                 AuthScope.BITS_READ,
-                 AuthScope.MODERATOR_READ_BLOCKED_TERMS,
-                 AuthScope.MODERATOR_READ_CHAT_SETTINGS,
-                 AuthScope.MODERATOR_READ_MODERATORS,
-                 AuthScope.MODERATOR_READ_VIPS,
-                 AuthScope.MODERATOR_MANAGE_UNBAN_REQUESTS,
-                 AuthScope.MODERATOR_MANAGE_BANNED_USERS,
-                 AuthScope.MODERATOR_MANAGE_CHAT_MESSAGES,
-                 AuthScope.MODERATOR_MANAGE_WARNINGS,
-                 AuthScope.CHANNEL_MANAGE_VIPS,
-                 AuthScope.MODERATION_READ,
-                 AuthScope.CHANNEL_MANAGE_POLLS,
-                 AuthScope.MODERATOR_MANAGE_BLOCKED_TERMS,
-                 AuthScope.CHANNEL_MANAGE_PREDICTIONS,
-                 AuthScope.CHANNEL_MANAGE_REDEMPTIONS,
-                 AuthScope.MODERATOR_MANAGE_AUTOMOD,
-                 AuthScope.CHANNEL_READ_SUBSCRIPTIONS,
-                 AuthScope.CHANNEL_READ_HYPE_TRAIN,
-                 AuthScope.MODERATOR_MANAGE_SHIELD_MODE,
-                 AuthScope.MODERATOR_READ_SUSPICIOUS_USERS,
-                 AuthScope.MODERATOR_MANAGE_WARNINGS,
-                 AuthScope.MODERATOR_READ_AUTOMOD_SETTINGS,
-                 AuthScope.MODERATOR_MANAGE_SHOUTOUTS
-                 ]
+import authscopes as auth_scope
 
 
 class TwitchEvents:
@@ -149,7 +110,7 @@ class TwitchEvents:
         u need a app registered at twitch -> .env
         """
         twitch = await Twitch(self.CLIENT_ID, self.CLIENT_S,)
-        helper = UserAuthenticationStorageHelper(twitch, TARGET_SCOPES)
+        helper = UserAuthenticationStorageHelper(twitch, auth_scope.TARGET_SCOPES)
         await helper.bind()
         user = await first(twitch.get_users())
 
@@ -174,13 +135,13 @@ class TwitchEvents:
                             auth_base_url   = self.AUTH_BASE_URL)
         twitch.auto_refresh_auth = False # cli needs no refreshing
         auth = UserAuthenticator(twitch, 
-                                 [AuthScope.CHANNEL_READ_SUBSCRIPTIONS], 
+                                 auth_scope.CLI_SCOPES, 
                                  auth_base_url=self.AUTH_BASE_URL)
         x = self.CLI_UID
 
         token = await auth.mock_authenticate(self.CLI_UID)
         await twitch.set_user_authentication(token,
-                                             [AuthScope.CHANNEL_READ_SUBSCRIPTIONS])
+                                             auth_scope.CLI_SCOPES)
         user = await first(twitch.get_users())
         eventsub = EventSubWebsocket(twitch,
                                     connection_url=self.CONNECTION_URL,
@@ -419,3 +380,48 @@ class TwitchEvents:
         self.logger.debug(f'twitch event trigger channel.subscription.end -t {self.user.id} -u {sub_end_id} -T websocket') 
         self.logger.debug(f'twitch event trigger channel.subscription.gift -t {self.user.id} -u {sub_gift_id} -T websocket') 
         self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {sub_message_id} -T websocket') 
+
+    async def listen_moderate_events(self):
+        """
+        channel.moderator.add 
+        channel.moderator.remove
+        channel.ad_break.begin 
+        """
+
+    async def listen_channel_action_events(self):
+        """
+        channel.cheer 
+        channel.follow 
+        channel.raid 
+        """
+
+    async def collection_of_events_not_supported_with_cli(self):
+        """
+        ATTENTION: you cant use this fct. when self.use_cli = True! only in production or simulation
+        """
+        #await eventsub.listen_channel_suspicious_user_message(user.id, user.id,  onSuspiciosUserMessage)
+        #await eventsub.listen_channel_suspicious_user_update(user.id, user.id, onSuspiciousUserUpdate)
+        #await eventsub.listen_channel_warning_send(user.id, user.id, onWarningSend)
+        #await eventsub.listen_channel_warning_acknowledge(user.id,user.id, onWarningAcknowledge)
+
+        #await eventsub.listen_automod_message_hold(user.id, user.id, onAutomodMessageHold)
+        #await eventsub.listen_automod_message_update(user.id, user.id, onAutomodMessageUpdate)
+        #await eventsub.listen_automod_terms_update(user.id, user.id, onAutomodTermsUpdate)
+        #await eventsub.listen_automod_settings_update(user.id, user.id , onAutomodSettingsUpdate)
+
+        #await eventsub.listen_channel_points_automatic_reward_redemption_add(user.id, onPointsAutoRewardRedemptionAdd)
+        #await eventsub.listen_channel_chat_clear(user.id,user.id, onChatClear)
+        #await eventsub.listen_channel_chat_clear_user_messages(user.id, user.id, onChatClearUserMessages)
+
+        #await eventsub.listen_channel_chat_notification(user.id, user.id, onChatNotification)
+
+
+        #await eventsub.listen_channel_chat_notification(user.id, user.id, onChatNotification)
+        #await eventsub.listen_channel_cheer(user.id, onChannelCheer)
+
+        #await eventsub.listen_channel_moderate(user.id,user.id, onChannelModerate)
+        #await eventsub.listen_channel_moderator_add(user.id,   onChannelModeratorAdd)
+        #await eventsub.listen_channel_moderator_remove(user.id,  onModeratorRemove)
+        #await eventsub.listen_channel_vip_add(user.id,onVipAdd)
+        #await eventsub.listen_channel_vip_remove(user.id,onVipRemove)
+        #await eventsub.listen_channel_chat_message(user.id , user.id, onChatMessage)
