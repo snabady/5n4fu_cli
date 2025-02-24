@@ -16,8 +16,20 @@ async def main():
 
     # this for mocking with cli
     async with twitchEvents.TwitchEvents(use_cli_conn=True) as tevents:
-        await tevents.subCliEventsTEMPO()
-    
+        try:
+            #await tevents.subCliEventsTEMPO()
+            await tevents.listen_ban_events()
+            await tevents.listen_channel_goal_events()
+            await tevents.listen_channel_points()
+            await tevents.listen_channel_polls()
+            await tevents.listen_channel_predictions()
+            await tevents.listen_hype_train()
+            await tevents.listen_shoutout_events()
+            await tevents.listen_stream_info_events()
+            await tevents.listen_subscribe_events()
+            await tevents.listen_charity_events()
+        except Exception as e:
+            print(e)
     # this for real connection
     #async with twitchEvents.TwitchEvents() as tevents:
     #    await tevents.subCliEventsTEMPO()  

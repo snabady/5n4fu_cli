@@ -4,3 +4,4 @@ twitchApi
 websockets
 dotenv
 colorlog
+flask

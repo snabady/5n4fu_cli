@@ -1,0 +1,1 @@
+asyncio.run(twitch_setup())
