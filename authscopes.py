@@ -50,10 +50,11 @@ CLI_SCOPES = [AuthScope.CHANNEL_READ_SUBSCRIPTIONS,
               AuthScope.CHANNEL_READ_HYPE_TRAIN,
               AuthScope.CHANNEL_MANAGE_PREDICTIONS,
               AuthScope.CHANNEL_MANAGE_REDEMPTIONS,
-              AuthScope.MODERATOR_MANAGE_SHOUTOUTS
-              
-                 
+              AuthScope.MODERATOR_MANAGE_SHOUTOUTS,
+              AuthScope.CHANNEL_READ_CHARITY
                  ]
-
+# no cli-support
 #AuthScope.CHANNEL_MANAGE_POLLS,
 #AuthScope.CHANNEL_READ_ADS
+#AuthScope.CHANNEL_MODERATE
+#AuthScope.MODERATOR_READ_UNBAN_REQUESTS

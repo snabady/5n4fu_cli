@@ -307,11 +307,16 @@ class TwitchEvents:
 
     async def listen_ban_events(self):
         """
+        ATTENTION: PROBABLY NOT WORKING WITHIN CLI!
+
+
         channel.ban 
         channel.unban
         channel.unban_request.create
         channel.unban_request.resolve
         TODO: mod? ->
+
+
         """
         ban_id                = await self.eventsub.listen_channel_ban(self.user.id, teh.on_ban)
         unban_id              = await self.eventsub.listen_channel_unban(self.user.id, teh.on_unban)
