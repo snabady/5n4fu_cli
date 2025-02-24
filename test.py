@@ -10,8 +10,8 @@ async def main():
      generate usercred         twitch mock-api generate
      start the mock server     twitch mock-api start
      start websocketapi        twitch event websocket start
-
-     when it is running copy paste the output and put it into console *magic*
+     python test.py 
+     when it is running copy paste the output-command and put it into new console *magic*
     """
 
     # this for mocking with cli
