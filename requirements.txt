@@ -5,3 +5,4 @@ websockets
 dotenv
 colorlog
 flask
+mysql-connector-python

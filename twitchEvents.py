@@ -1,8 +1,6 @@
 from twitchAPI.twitch import Twitch, TwitchUser
-from twitchAPI.type import AuthScope
 from twitchAPI.oauth import UserAuthenticator, UserAuthenticationStorageHelper
 from twitchAPI.eventsub.websocket import EventSubWebsocket
-from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent,StreamOnlineEvent,StreamOfflineEvent,ChannelUpdateEvent, GoalEvent
 from twitchAPI.helper import first
 from typing import Tuple, Optional
 import os
@@ -11,6 +9,7 @@ import logging
 import colorlog
 import twitch_event_handler as teh
 import authscopes as auth_scope
+from twitchAPI.type import TwitchBackendException
 
 
 class TwitchEvents:
@@ -190,7 +189,7 @@ class TwitchEvents:
         https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types#streamonline
         https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types#streamoffline
         https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types#channelupdate
-        https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types#streamoffline
+        https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types#channelupdate
 
         """
         streamonline_id     = await self.eventsub.listen_stream_online(self.user.id,
@@ -399,34 +398,60 @@ class TwitchEvents:
         channel.follow 
         channel.raid 
         """
+        sub_message_id = await self.eventsub.listen_channel_cheer(self.user.id, self.onChannelCheer)
+        self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {sub_message_id} -T websocket') 
+
+
+    async def onChannelCheer(self, x):
+        self.logger.debug(str(x))
+
+    async def onPointsAutoRewardRedemptionAdd(self, x):
+        self.logger.debug(str(x))
+
+
+    async def onChatMessage(self, x):
+        self.logger.debug(str(x))
+
 
     async def collection_of_events_not_supported_with_cli(self):
         """
         ATTENTION: you cant use this fct. when self.use_cli = True! only in production or simulation
         """
+        try:
+            # The combination of values in the type and version fields is not valid
+            sub_message_id = await self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.onPointsAutoRewardRedemptionAdd)
+            
+            # The combination of values in the type and version fields is not valid
+            #sub_message_id = await self.eventsub.listen_channel_chat_message(self.user.id , self.user.id, self.onChatMessage)
+            #The combination of values in the type and version fields is not valid
+            self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {self.sub_message_id} -T websocket') 
+        except TwitchBackendException as e:
+            self.logger.error(f'TwitchBackendException: {e}')
+        except Exception as e:
+            self.logger.error(e)
+
+
         #await eventsub.listen_channel_suspicious_user_message(user.id, user.id,  onSuspiciosUserMessage)
         #await eventsub.listen_channel_suspicious_user_update(user.id, user.id, onSuspiciousUserUpdate)
+
         #await eventsub.listen_channel_warning_send(user.id, user.id, onWarningSend)
         #await eventsub.listen_channel_warning_acknowledge(user.id,user.id, onWarningAcknowledge)
 
         #await eventsub.listen_automod_message_hold(user.id, user.id, onAutomodMessageHold)
         #await eventsub.listen_automod_message_update(user.id, user.id, onAutomodMessageUpdate)
         #await eventsub.listen_automod_terms_update(user.id, user.id, onAutomodTermsUpdate)
+        
         #await eventsub.listen_automod_settings_update(user.id, user.id , onAutomodSettingsUpdate)
-
-        #await eventsub.listen_channel_points_automatic_reward_redemption_add(user.id, onPointsAutoRewardRedemptionAdd)
+        
         #await eventsub.listen_channel_chat_clear(user.id,user.id, onChatClear)
         #await eventsub.listen_channel_chat_clear_user_messages(user.id, user.id, onChatClearUserMessages)
-
         #await eventsub.listen_channel_chat_notification(user.id, user.id, onChatNotification)
-
-
         #await eventsub.listen_channel_chat_notification(user.id, user.id, onChatNotification)
-        #await eventsub.listen_channel_cheer(user.id, onChannelCheer)
-
+        
         #await eventsub.listen_channel_moderate(user.id,user.id, onChannelModerate)
         #await eventsub.listen_channel_moderator_add(user.id,   onChannelModeratorAdd)
         #await eventsub.listen_channel_moderator_remove(user.id,  onModeratorRemove)
+        
         #await eventsub.listen_channel_vip_add(user.id,onVipAdd)
         #await eventsub.listen_channel_vip_remove(user.id,onVipRemove)
-        #await eventsub.listen_channel_chat_message(user.id , user.id, onChatMessage)
+        

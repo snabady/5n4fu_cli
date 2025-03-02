@@ -1,5 +1,5 @@
 from twitchAPI.type import AuthScope
-from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent,StreamOnlineEvent,StreamOfflineEvent,ChannelUpdateEvent, GoalEvent
+
 TARGET_SCOPES = [
                  AuthScope.MODERATOR_READ_FOLLOWERS,
                  AuthScope.USER_READ_CHAT,
@@ -53,7 +53,7 @@ CLI_SCOPES = [AuthScope.CHANNEL_READ_SUBSCRIPTIONS,
               AuthScope.MODERATOR_MANAGE_SHOUTOUTS,
               AuthScope.CHANNEL_READ_CHARITY
                  ]
-# no cli-support
+# no cli-support check find another solution?
 #AuthScope.CHANNEL_MANAGE_POLLS,
 #AuthScope.CHANNEL_READ_ADS
 #AuthScope.CHANNEL_MODERATE

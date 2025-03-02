@@ -1,0 +1,15 @@
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS event_follow;
+DROP TABLE IF EXISTS event_subscribe;
+DROP TABLE IF EXISTS event_shoutout;
+DROP TABLE IF EXISTS event_hypetrain;
+DROP TABLE IF EXISTS event_channelpoints;
+DROP TABLE IF EXISTS event_predictions;
+DROP TABLE IF EXISTS event_polls;
+DROP TABLE IF EXISTS event_goals;
+DROP TABLE IF EXISTS event_streaminfo;
+DROP TABLE IF EXISTS event;
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
