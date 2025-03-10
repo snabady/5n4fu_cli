@@ -32,7 +32,7 @@ In this step u also have to create a [twitch-app](https://dev.twitch.tv/console/
 
 7. Run:  
    ```sh
-   python test.py
+   python twitch-mocking.py
    ```
    or test it live on twitch with real credentials
    ```sh
