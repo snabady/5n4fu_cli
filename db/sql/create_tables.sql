@@ -1,3 +1,4 @@
+-- Active: 1741211436712@@127.0.0.1@3306@twitch
 CREATE TABLE IF NOT EXISTS users (
     id             INT PRIMARY KEY,
     username       VARCHAR(55),
@@ -20,32 +21,33 @@ CREATE TABLE IF NOT EXISTS eventtypes (
 CREATE TABLE IF NOT EXISTS event (
 
     id              VARCHAR(50) NOT NULL PRIMARY KEY,
-    event_type      INT NOT NULL,
+    event_type      INT,
     sub_id          VARCHAR(255) NOT NULL,
     json_data       JSON NOT NULL, 
-    timestamp       DATETIME NOT NULL
+    timestamp       DATETIME NOT NULL,
+    FOREIGN KEY (event_type) REFERENCES eventtypes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS event_streaminfo (
     id                              INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                        INT NOT NULL,
+    event_id                        VARCHAR(50) NOT NULL,
     stream_id                       VARCHAR(255),
-    broadcaster_user_id             INT,
+    broadcaster_user_id             INT NOT NULL,
     stream_type                     VARCHAR(255),
-    startet_at                      DATETIME, 
+    started_at                      DATETIME, 
     stream_language                 VARCHAR(55),
     category_id                     INT, 
-    content_classification_labels   VARCHAR(255),
+    content_classification_labels   TEXT,  -- Using TEXT for flexibility
     stream_title                    VARCHAR(255) NOT NULL,
 
-    FOREIGN KEY (broadcaster_user_id) REFERENCES users(id), 
+    FOREIGN KEY (broadcaster_user_id) REFERENCES users(id) ON DELETE CASCADE, 
     FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS event_goals (
     id                      INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                INT NOT NULL,
-    goal_id                 VARCHAR(255),
+    event_id                VARCHAR(50) NOT NULL,
+    goal_id                 VARCHAR(255) NOT NULL,
     broadcaster_user_id     INT,
     goal_type               VARCHAR(255) NOT NULL,
     goal_description        TEXT,
@@ -61,7 +63,7 @@ CREATE TABLE IF NOT EXISTS event_goals (
 
 CREATE TABLE IF NOT EXISTS event_polls (
     id                          INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                    INT NOT NULL,
+    event_id                    VARCHAR(255) NOT NULL,
     goal_id                     VARCHAR(255),
     broadcaster_user_id         INT, 
     poll_title                  TEXT, 
@@ -78,7 +80,7 @@ CREATE TABLE IF NOT EXISTS event_polls (
 
 CREATE TABLE IF NOT EXISTS event_predictions (
     id                      INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                INT NOT NULL,
+    event_id                VARCHAR(255) NOT NULL,
     prediction_id           VARCHAR(55),
     broadcaster_user_id     INT,
     prediction_status       VARCHAR(55),  -- Hier fehlte ein Komma!
@@ -95,7 +97,7 @@ CREATE TABLE IF NOT EXISTS event_predictions (
 
 CREATE TABLE IF NOT EXISTS event_channelpoints (
     id                                      INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                                INT NOT NULL,
+    event_id                                VARCHAR(255) NOT NULL,
     channelpoints_id                        INT,
     is_enabled                              TINYINT(1),
     is_paused                               TINYINT(1),
@@ -126,7 +128,7 @@ CREATE TABLE IF NOT EXISTS event_channelpoints (
 
 CREATE TABLE IF NOT EXISTS event_hypetrain (
     id                          INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                    INT NOT NULL,
+    event_id                    VARCHAR(255) NOT NULL,
     hypetrain_id                INT,
     broadcaster_user_id          INT,
     userid                      INT,  -- Fehlte in deiner Version!
@@ -151,7 +153,7 @@ CREATE TABLE IF NOT EXISTS event_hypetrain (
 
 CREATE TABLE IF NOT EXISTS event_shoutout (
     id                          INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                    INT NOT NULL,
+    event_id                    VARCHAR(255) NOT NULL,
     broadcaster_user_id          INT,
     moderator_user_id            INT,
     from_broadcaster_user_id     INT,
@@ -169,7 +171,7 @@ CREATE TABLE IF NOT EXISTS event_shoutout (
 
 CREATE TABLE IF NOT EXISTS event_subscribe (
     id                      INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                INT NOT NULL,
+    event_id                VARCHAR(255) NOT NULL,
     userid                  INT,
     broadcaster_user_id     INT,
     tier                    INT,
@@ -188,7 +190,7 @@ CREATE TABLE IF NOT EXISTS event_subscribe (
 
 CREATE TABLE IF NOT EXISTS event_follow (
     id                      INT AUTO_INCREMENT PRIMARY KEY,
-    event_id                INT NOT NULL,
+    event_id                VARCHAR(255) NOT NULL,
     userid                 INT,  
     broadcaster_user_id     INT,
     followed_at             DATETIME NOT NULL,

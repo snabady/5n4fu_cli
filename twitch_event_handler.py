@@ -1,6 +1,7 @@
 from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent,StreamOnlineEvent,StreamOfflineEvent,ChannelUpdateEvent, GoalEvent, ChannelPredictionEvent, ChannelPointsCustomRewardRedemptionUpdateEvent, ChannelPointsCustomRewardRedemptionAddEvent,ChannelPointsCustomRewardUpdateEvent,ChannelPointsCustomRewardRemoveEvent, ChannelPointsCustomRewardAddEvent, HypeTrainEvent, HypeTrainEndEvent, ChannelUnbanRequestResolveEvent,ChannelBanEvent,ChannelUnbanEvent, ChannelUnbanRequestCreateEvent, CharityCampaignProgressEvent, CharityCampaignStartEvent, CharityCampaignStopEvent, CharityDonationEvent, ChannelSubscriptionEndEvent, ChannelSubscriptionGiftEvent, ChannelSubscriptionMessageEvent, ChannelShoutoutCreateEvent, ChannelShoutoutReceiveEvent
 import logging
 import colorlog
+import subprocess
 
 
 
@@ -22,10 +23,38 @@ def add_logger_handler(logger):
     logger.addHandler(handler)
     return logger
 
+async def eventchecker(x):
+    if isinstance(x, ChannelSubscribeEvent):
+        pass
+
+
+async def send_to_websocket(x):
+    if isinstance(x, ChannelSubscribeEvent):
+        pass 
+
+async def send_to_db(x):
+    if isinstance(x, ChannelSubscribeEvent):
+        pass
+
+async def send_to_log(x):
+    if isinstance(x, ChannelSubscribeEvent):
+        pass
+
+async def do_xcow_things(x):
+    if isinstance(x, ChannelSubscribeEvent):
+        # TODO asyncio.subprocess !!!
+       
+        pass
+    
+
 async def onSubscribe( x: ChannelSubscribeEvent):
     """
     displays the data received by the channel_subscribe Event
     """
+    await send_to_log(x)
+    blub = f'{x.event.user_name} just subscribed'
+    subprocess.run(['xcowsay', '--monitor',  '1', blub, '--image=' '/home/snafu/Downloads/cow.png', '--think' ,'--bubble-at=-230,-6',  ])
+    
     logger.info('received subscribtion')
     logger.debug(f'{x.event.to_dict()}')
     
@@ -33,6 +62,8 @@ async def on_channel_raid(x: ChannelRaidEvent):
     """
     displays the data received by the channel_subscribe Event
     """
+    blub = f'{x.event.from_broadcaster_user_name} just raided with {x.event.viewers} viewer'
+    subprocess.run(['xcowsay', '--monitor',  '1', blub, '--image=' '/home/snafu/Downloads/cow.png', '--think' ,'--bubble-at=-230,-6',  ])
     logger.info(f'received channel raid')
     logger.debug(f'{x.event.to_dict()}')
 
@@ -43,6 +74,9 @@ async def on_follow(x: ChannelFollowEvent):
     relevant parts: x.event.
     https://dev.twitch.tv/docs/eventsub/eventsub-reference/
     """
+    
+    blub = f'{x.event.user_name} just followed'
+    subprocess.run(['xcowsay', '--monitor',  '1', blub, '--image=' '/home/snafu/Downloads/cow.png', '--think' ,'--bubble-at=-230,-6',  ])
     logger.info(f'received follow event')
     logger.debug(f'{x.event.to_dict()}')
 

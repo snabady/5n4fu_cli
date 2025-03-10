@@ -3,7 +3,7 @@
 ## Getting Started
 
 1. Install and set up **twitch-cli** as described in the [Twitch Docs](https://dev.twitch.tv/docs/cli/).
-you have to finish until u generated a token! 
+you have to finish until u generated a token!
 2. Run:  
    ```sh
    twitch mock-api generate
@@ -15,7 +15,7 @@ you have to finish until u generated a token!
    ```
    you can change host/port 
    ```sh
-   twitch event websocket start -p 8081
+   twitch mock-api start -p 8081
    ```
 
 5. Run:  
@@ -33,3 +33,6 @@ you have to finish until u generated a token!
    python test.py
    ```
 8. copy the command printed by test.py into a console to trigger an event manually
+
+
+if u use production, u currently have to change oauth url (twitch-dev-application-settings) to localhost:17xxx

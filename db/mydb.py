@@ -286,74 +286,12 @@ class Twitch:
                             """)
       
         self.conn.commit()
+def insert_into_event(self, event_type, sub_is, json_data, timestamp): 
+    """
+    inserts data into event table
+    """
+    query = "INSERT INTO event (event_type, sub_id, json_data, timestamp) VALUES (%s, %s, %s, %s)"
 
-    def streamonline_event(self, x: StreamOnlineEvent):
-        """
-        callback fkt for stream online
-
-        receives the data from stream_online Event
-        """
-        
-        self.cursor.execute(""" 
-                            INSERT INTO event (
-                                id
-                                event_type,
-                                sub_id,
-                                json_data,
-                                timestamp
-                            ) VALUES (
-                                %s,
-                                %s,
-                                %s,
-                                %s,
-                                NOW()
-                            );
-                            """,
-                            (
-                                x.event.id
-                                x.subscription.type,
-                                {x.event.type},
-
-                                x.event.type,
-                                x.subscription.id,  # Hier war der Fehler!
-                                x.subscription.to_dict(),
-                                x.event.type,
-                                x.subscription.id,
-                                x.subscription.to_dict()
-                            ))
-        self.cursor.execute("""
-                            INSERT INTO event_streaminfo (
-                                event_id,
-                                stream_id,
-                                broadcaster_user_id,
-                                stream_type,
-                                startet_at,
-                                stream_language,
-                                category_id,
-                                content_classification_labels,
-                                stream_title
-                            ) VALUES (
-                                (SELECT id FROM event WHERE sub_id = %s),
-                                %s,
-                                %s,
-                                %s,
-                                %s,
-                                %s,
-                                %s,
-                                %s,
-                                %s
-                            );
-                            """,
-                            (
-                                x.subscription.id,
-                                x.event.id,
-                                x.event.broadcaster_user_id,
-                                x.event.type,
-                                x.event.started_at,
-                                x.event.language,
-                                x.event.category_id,
-                                x.event.content_classification_labels,
-                                x.event.title
-                            )
-                        )
-        self.conn.commit()
+    values = (event_type, sub_is, json_data, timestamp)
+    self.cursor.execute(query, values)
+    self.conn.commit()

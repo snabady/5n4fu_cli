@@ -10,7 +10,7 @@ import colorlog
 import twitch_event_handler as teh
 import authscopes as auth_scope
 from twitchAPI.type import TwitchBackendException
-
+import db.mydb as mydb
 
 class TwitchEvents:
     """
@@ -25,7 +25,8 @@ class TwitchEvents:
     user: Optional[TwitchUser]              = None
 
     def __init__(self, 
-                 use_cli_conn=False):
+                 use_cli_conn=False, 
+                 db=None):
         """
         use_cli_conn    bool    default False
                                 if True -> mock-cli is used instead of production
@@ -38,6 +39,9 @@ class TwitchEvents:
         
         load_dotenv(override=True)
         self.use_cli_conn= use_cli_conn
+        self.db = db
+        if self.db != None:
+            pass
          
         self.setEnv()
 
@@ -102,6 +106,9 @@ class TwitchEvents:
         else:
             self.CLIENT_ID          = os.getenv("CLIENT_ID")
             self.CLIENT_S           = os.getenv("CLIENT_S")
+            #self.logger.debug(f'CLIENT_ID: {self.BASE_URL or "NOT SET"}')
+            #self.logger.debug(f'CLIENT_S: {self.AUTH_BASE_URL or "NOT SET"}')
+            
 
     async def prodConn(self) -> Tuple[EventSubWebsocket, Twitch, TwitchUser]:
         """
@@ -156,21 +163,22 @@ class TwitchEvents:
         also working with your real twitch-app-creds
         """
         try:
-            self.eventsub.start()
+            
+            #self.eventsub.start()
+            
             
             self.logger.info(f'copy&paste the following command to trigger an event')
             sub_id = await self.eventsub.listen_channel_subscribe(self.user.id, 
                                                                 teh.onSubscribe)
-            self.logger.info(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket')
-
             raid_id = await self.eventsub.listen_channel_raid(teh.on_channel_raid, 
                                                             None,self.user.id)
-            self.logger.info(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket')
-
             follow_id = await self.eventsub.listen_channel_follow_v2(self.user.id, 
                                                                     self.user.id, 
                                                                     teh.on_follow)
+            self.logger.info(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket')
+            self.logger.info(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket')
             self.logger.info(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket')
+
         except Exception as e:
             self.logger.error(e)
          
@@ -421,6 +429,7 @@ class TwitchEvents:
             # The combination of values in the type and version fields is not valid
             sub_message_id = await self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.onPointsAutoRewardRedemptionAdd)
             
+            
             # The combination of values in the type and version fields is not valid
             #sub_message_id = await self.eventsub.listen_channel_chat_message(self.user.id , self.user.id, self.onChatMessage)
             #The combination of values in the type and version fields is not valid
@@ -429,8 +438,9 @@ class TwitchEvents:
             self.logger.error(f'TwitchBackendException: {e}')
         except Exception as e:
             self.logger.error(e)
-
-
+        
+        
+        
         #await eventsub.listen_channel_suspicious_user_message(user.id, user.id,  onSuspiciosUserMessage)
         #await eventsub.listen_channel_suspicious_user_update(user.id, user.id, onSuspiciousUserUpdate)
 
