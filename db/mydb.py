@@ -5,11 +5,21 @@ import colorlog
 import logging
 from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent,StreamOnlineEvent,StreamOfflineEvent,ChannelUpdateEvent, GoalEvent, ChannelPredictionEvent, ChannelPointsCustomRewardRedemptionUpdateEvent, ChannelPointsCustomRewardRedemptionAddEvent,ChannelPointsCustomRewardUpdateEvent,ChannelPointsCustomRewardRemoveEvent, ChannelPointsCustomRewardAddEvent, HypeTrainEvent, HypeTrainEndEvent, ChannelUnbanRequestResolveEvent,ChannelBanEvent,ChannelUnbanEvent, ChannelUnbanRequestCreateEvent, CharityCampaignProgressEvent, CharityCampaignStartEvent, CharityCampaignStopEvent, CharityDonationEvent, ChannelSubscriptionEndEvent, ChannelSubscriptionGiftEvent, ChannelSubscriptionMessageEvent, ChannelShoutoutCreateEvent, ChannelShoutoutReceiveEvent
 
-class Twitch:
+class MyDB:
 
     def __init__(self):
         """
         opens connection to specific db
+        all sql is mysql specific - i am using mariadb 
+
+        if u use this code u need to setup a .env file with the following variables:
+        mysql_host
+        mysql_user
+        mysql_password
+        mysql_database  
+
+        if no tables exist, the script will create the needed tables.
+
         """
         self.initLogger()
         self.setEnv()

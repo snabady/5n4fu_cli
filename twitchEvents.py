@@ -1,5 +1,6 @@
 from twitchAPI.twitch import Twitch, TwitchUser
 from twitchAPI.oauth import UserAuthenticator, UserAuthenticationStorageHelper
+from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent, StreamOnlineEvent, StreamOfflineEvent, ChannelUpdateEvent, GoalEvent, ChannelPredictionEvent, ChannelPointsCustomRewardRedemptionUpdateEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelPointsCustomRewardUpdateEvent, ChannelPointsCustomRewardRemoveEvent, ChannelPointsCustomRewardAddEvent, HypeTrainEvent, HypeTrainEndEvent, ChannelUnbanRequestResolveEvent, ChannelBanEvent, ChannelUnbanEvent, ChannelUnbanRequestCreateEvent, CharityCampaignProgressEvent, CharityCampaignStartEvent, CharityCampaignStopEvent, CharityDonationEvent, ChannelSubscriptionEndEvent, ChannelSubscriptionGiftEvent, ChannelSubscriptionMessageEvent, ChannelShoutoutCreateEvent, ChannelShoutoutReceiveEvent
 from twitchAPI.eventsub.websocket import EventSubWebsocket
 from twitchAPI.helper import first
 from typing import Tuple, Optional
@@ -11,6 +12,7 @@ import twitch_event_handler as teh
 import authscopes as auth_scope
 from twitchAPI.type import TwitchBackendException
 import db.mydb as mydb
+import asyncio
 
 class TwitchEvents:
     """
@@ -23,6 +25,8 @@ class TwitchEvents:
     twitch: Optional[Twitch]                = None
     eventsub: Optional[EventSubWebsocket]   = None
     user: Optional[TwitchUser]              = None
+
+
 
     def __init__(self, 
                  use_cli_conn=False, 
@@ -37,14 +41,20 @@ class TwitchEvents:
         self.add_logger_handler()
         self.logger.setLevel(logging.DEBUG)
         
+        self.eventqueue = asyncio.Queue()
+        self.eventmap = self.get_eventmap()
+
         load_dotenv(override=True)
         self.use_cli_conn= use_cli_conn
+        self.sub_id_map = {}
+        
         self.db = db
         if self.db != None:
             pass
          
         self.setEnv()
 
+        
             
     async def __aenter__(self):
         if self.use_cli_conn:
@@ -53,7 +63,10 @@ class TwitchEvents:
             self.eventsub, self.twitch, self.user = await self.prodConn()
         
         self.eventsub.start()
-        self.logger.info("eventsub started successfully")
+
+        self.eventhandler = asyncio.create_task(self.eventchecker())
+        self.logger.debug('sucessfully started eventchecker')
+        self.logger.info("sucessfully started eventsub")
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
@@ -108,8 +121,65 @@ class TwitchEvents:
             self.CLIENT_S           = os.getenv("CLIENT_S")
             #self.logger.debug(f'CLIENT_ID: {self.BASE_URL or "NOT SET"}')
             #self.logger.debug(f'CLIENT_S: {self.AUTH_BASE_URL or "NOT SET"}')
-            
+    def get_eventmap(self):
+        return     { 
+        ChannelSubscribeEvent: teh.onSubscribe,
+        ChannelRaidEvent: teh.on_channel_raid,
+        ChannelFollowEvent: teh.on_follow,
+        StreamOnlineEvent: teh.on_stream_online,
+        StreamOfflineEvent: teh.on_stream_offline,
+        ChannelUpdateEvent: teh.on_channel_update_v2,
+        GoalEvent: teh.on_goal_begin,
+        ChannelPredictionEvent: teh.on_prediction_begin,
+        ChannelPointsCustomRewardRedemptionUpdateEvent: teh.on_redemption_update,
+        ChannelPointsCustomRewardRedemptionAddEvent: teh.on_redemption_add,
+        ChannelPointsCustomRewardUpdateEvent: teh.on_reward_update,
+        ChannelPointsCustomRewardRemoveEvent: teh.on_reward_remove,
+        ChannelPointsCustomRewardAddEvent: teh.on_reward_add,
+        HypeTrainEvent: teh.on_hype_train_begin,
+        HypeTrainEndEvent: teh.on_hype_train_end,
+        ChannelUnbanRequestResolveEvent: teh.on_unban_request_resolve,
+        ChannelBanEvent: teh.on_ban,
+        ChannelUnbanEvent: teh.on_unban,
+        ChannelUnbanRequestCreateEvent: teh.on_unban_request_create,
+        CharityCampaignProgressEvent: teh.on_charity_progress,
+        CharityCampaignStartEvent: teh.on_charity_start,
+        CharityCampaignStopEvent: teh.on_charity_stop,
+        CharityDonationEvent: teh.on_charity_donate,
+        ChannelSubscriptionEndEvent: teh.on_subscription_end,
+        ChannelSubscriptionGiftEvent: teh.on_subscription_gift,
+        ChannelSubscriptionMessageEvent: teh.on_subscription_message,
+        ChannelShoutoutCreateEvent: teh.on_shoutout_create,
+        ChannelShoutoutReceiveEvent: teh.on_shoutout_receive    
+    }    
 
+
+
+    async def on_twitch_event(self, x):
+        self.logger.debug(f'Event: {x}')
+        await self.eventqueue.put(x)
+        self.logger.debug(f'subscription[{x.subscription.type}] - added to queue')  
+        
+
+    async def eventchecker(self):
+        while True:
+            self.logger.debug('eventchecker')    
+            x = await self.eventqueue.get()
+             
+            
+            event_type = type(x)
+            self.logger.debug(f'Event: {event_type}')
+            if event_type in self.eventmap:
+                handler = self.eventmap[event_type]
+                
+                await handler(x, self)
+                self.eventqueue.task_done()
+
+            else:
+                self.logger.error(f'Event not supported: {event_type}')
+                
+            
+            await asyncio.sleep(0.1) 
     async def prodConn(self) -> Tuple[EventSubWebsocket, Twitch, TwitchUser]:
         """
         creates a connection to Twitch EventSub using websockets
@@ -123,6 +193,9 @@ class TwitchEvents:
         eventsub = EventSubWebsocket(twitch)
         
         return eventsub, twitch, user
+
+    async def iamatest(self):
+        self.logger.debug("i am a test")
 
     async def climockingConn(self) -> Tuple[EventSubWebsocket, Twitch, TwitchUser]:
         """
@@ -169,12 +242,16 @@ class TwitchEvents:
             
             self.logger.info(f'copy&paste the following command to trigger an event')
             sub_id = await self.eventsub.listen_channel_subscribe(self.user.id, 
-                                                                teh.onSubscribe)
-            raid_id = await self.eventsub.listen_channel_raid(teh.on_channel_raid, 
+                                                                self.on_twitch_event)
+            raid_id = await self.eventsub.listen_channel_raid(self.on_twitch_event, 
                                                             None,self.user.id)
             follow_id = await self.eventsub.listen_channel_follow_v2(self.user.id, 
                                                                     self.user.id, 
-                                                                    teh.on_follow)
+                                                                    self.on_twitch_event)
+            self.sub_id_map.update({"channel.subscribe": sub_id})
+            self.sub_id_map.update({"channel.raid": raid_id})
+            self.sub_id_map.update({"channel.follow": follow_id})
+
             self.logger.info(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket')
             self.logger.info(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket')
             self.logger.info(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket')
@@ -201,19 +278,19 @@ class TwitchEvents:
 
         """
         streamonline_id     = await self.eventsub.listen_stream_online(self.user.id,
-                                                                       teh.on_stream_online)  
+                                                                       self.on_twitch_event)  
         self.logger.debug(f'twitch event trigger stream.online -t {self.user.id} -u {streamonline_id} -T websocket') 
 
         streamoffline_id    = await self.eventsub.listen_stream_offline(self.user.id,
-                                                                        teh.on_stream_offline)   
+                                                                        self.on_twitch_event)   
         self.logger.debug(f'twitch event trigger stream.offline -t {self.user.id} -u {streamoffline_id} -T websocket') 
 
         channelupdatev2_id  = await self.eventsub.listen_channel_update_v2(self.user.id,
-                                                                           teh.on_channel_update_v2)
+                                                                           self.on_twitch_event)
         self.logger.debug(f'twitch event trigger channel.update -t {self.user.id} -u {channelupdatev2_id} -T websocket') 
 
         channelupdate_id    = await self.eventsub.listen_channel_update(self.user.id,
-                                                                        teh.on_channel_update)
+                                                                        self.on_twitch_event)
         self.logger.debug(f'twitch event trigger channel.update -t {self.user.id} -u {channelupdate_id} -T websocket') 
         self.logger.info("successfully subscribed to stream_info_events")
     
@@ -224,9 +301,9 @@ class TwitchEvents:
         channel.goal.progress
         """
 
-        goal_begin_id       = await self.eventsub.listen_goal_begin(self.user.id, teh.on_goal_begin)
-        goal_end_id         = await self.eventsub.listen_goal_end(self.user.id, teh.on_goal_end)
-        goal_progress_id    = await self.eventsub.listen_goal_progress(self.user.id, teh.on_goal_progress)
+        goal_begin_id       = await self.eventsub.listen_goal_begin(self.user.id, self.on_twitch_event)
+        goal_end_id         = await self.eventsub.listen_goal_end(self.user.id, self.on_twitch_event)
+        goal_progress_id    = await self.eventsub.listen_goal_progress(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to channel_goal_events")
 
@@ -240,9 +317,9 @@ class TwitchEvents:
         channel.poll.end
         channel.poll.progress   
         """
-        poll_begin_id       = await self.eventsub.listen_channel_poll_begin(self.user.id, teh.on_poll_begin) 
-        poll_end_id         = await self.eventsub.listen_channel_poll_end(self.user.id, teh.on_poll_end)
-        poll_progress_id    = await self.eventsub.listen_channel_poll_progress(self.user.id, teh.on_poll_progress)
+        poll_begin_id       = await self.eventsub.listen_channel_poll_begin(self.user.id, self.on_twitch_event) 
+        poll_end_id         = await self.eventsub.listen_channel_poll_end(self.user.id, self.on_twitch_event)
+        poll_progress_id    = await self.eventsub.listen_channel_poll_progress(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to channel_poll_events")
 
@@ -258,10 +335,10 @@ class TwitchEvents:
         channel.prediction.progress
         """
 
-        prediction_begin_id         = await self.eventsub.listen_channel_prediction_begin(self.user.id, teh.on_prediction_begin)
-        prediction_end_id           = await self.eventsub.listen_channel_prediction_end(self.user.id, teh.on_prediction_end)
-        prediction_lock_id          = await self.eventsub.listen_channel_prediction_lock(self.user.id, teh.on_prediction_lock)
-        prediction_progress_id      = await self.eventsub.listen_channel_prediction_progress(self.user.id, teh.on_prediction_progress)
+        prediction_begin_id         = await self.eventsub.listen_channel_prediction_begin(self.user.id, self.on_twitch_event)
+        prediction_end_id           = await self.eventsub.listen_channel_prediction_end(self.user.id, self.on_twitch_event)
+        prediction_lock_id          = await self.eventsub.listen_channel_prediction_lock(self.user.id, self.on_twitch_event)
+        prediction_progress_id      = await self.eventsub.listen_channel_prediction_progress(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to channel_prediction_events")
 
@@ -279,11 +356,18 @@ class TwitchEvents:
         channel.channel_points_custom_reward_redemption.add
         channel.channel_points_custom_reward_redemption.update
         """
-        reward_add_id        = await self.eventsub.listen_channel_points_custom_reward_add(self.user.id, teh.on_reward_add)
-        reward_remove_id     = await self.eventsub.listen_channel_points_custom_reward_remove(self.user.id, teh.on_reward_remove)
-        reward_update_id     = await self.eventsub.listen_channel_points_custom_reward_update(self.user.id, teh.on_reward_update)
-        redemption_add_id    = await self.eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, teh.on_redemption_add)
-        redemption_update_id = await self.eventsub.listen_channel_points_custom_reward_redemption_update(self.user.id, teh.on_redemption_update)
+        reward_add_id        = await self.eventsub.listen_channel_points_custom_reward_add(self.user.id, self.on_twitch_event)
+        reward_remove_id     = await self.eventsub.listen_channel_points_custom_reward_remove(self.user.id, self.on_twitch_event)
+        reward_update_id     = await self.eventsub.listen_channel_points_custom_reward_update(self.user.id, self.on_twitch_event)
+        redemption_add_id    = await self.eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self.on_twitch_event)
+        redemption_update_id = await self.eventsub.listen_channel_points_custom_reward_redemption_update(self.user.id, self.on_twitch_event)
+
+        self.sub_id_map.update({"channel.channel_points_custom_reward.add": reward_add_id})
+        self.sub_id_map.update({"channel.channel_points_custom_reward.remove": reward_remove_id})
+        self.sub_id_map.update({"channel.channel_points_custom_reward.update": reward_update_id})
+        self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.add": redemption_add_id})
+        self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.update": redemption_update_id})
+        
 
         self.logger.info("successfully subscribed to channel_point_events")
 
@@ -301,9 +385,9 @@ class TwitchEvents:
         channel.hype_train.progress
         """
 
-        hype_train_begin_id    = await self.eventsub.listen_hype_train_begin(self.user.id, teh.on_hype_train_begin)
-        hype_train_end_id      = await self.eventsub.listen_hype_train_end(self.user.id, teh.on_hype_train_end)
-        hype_train_progress_id = await self.eventsub.listen_hype_train_progress(self.user.id, teh.on_hype_train_progress)
+        hype_train_begin_id    = await self.eventsub.listen_hype_train_begin(self.user.id, self.on_twitch_event)
+        hype_train_end_id      = await self.eventsub.listen_hype_train_end(self.user.id, self.on_twitch_event)
+        hype_train_progress_id = await self.eventsub.listen_hype_train_progress(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to hype_train_events")
 
@@ -325,10 +409,10 @@ class TwitchEvents:
 
 
         """
-        ban_id                = await self.eventsub.listen_channel_ban(self.user.id, teh.on_ban)
-        unban_id              = await self.eventsub.listen_channel_unban(self.user.id, teh.on_unban)
-        unban_request_id      = await self.eventsub.listen_channel_unban_request_create(self.user.id, self.user.id, teh.on_unban_request_create)
-        unban_request_resolve = await self.eventsub.listen_channel_unban_request_resolve(self.user.id, self.user.id, teh.on_unban_request_resolve)
+        ban_id                = await self.eventsub.listen_channel_ban(self.user.id, self.on_twitch_event)
+        unban_id              = await self.eventsub.listen_channel_unban(self.user.id, self.on_twitch_event)
+        unban_request_id      = await self.eventsub.listen_channel_unban_request_create(self.user.id, self.user.id, self.on_twitch_event)
+        unban_request_resolve = await self.eventsub.listen_channel_unban_request_resolve(self.user.id, self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to ban_events")
 
@@ -347,10 +431,10 @@ class TwitchEvents:
         channel.charity_campaign.start 
         channel.charity_campaign.stop
         """
-        charity_donate_id   = await self.eventsub.listen_channel_charity_campaign_donate(self.user.id, teh.on_charity_donate)
-        charity_progress_id = await self.eventsub.listen_channel_charity_campaign_progress(self.user.id, teh.on_charity_progress)
-        charity_start_id    = await self.eventsub.listen_channel_charity_campaign_start(self.user.id, teh.on_charity_start)
-        charity_stop_id     = await self.eventsub.listen_channel_charity_campaign_stop(self.user.id, teh.on_charity_stop)
+        charity_donate_id   = await self.eventsub.listen_channel_charity_campaign_donate(self.user.id, self.on_twitch_event)
+        charity_progress_id = await self.eventsub.listen_channel_charity_campaign_progress(self.user.id, self.on_twitch_event)
+        charity_start_id    = await self.eventsub.listen_channel_charity_campaign_start(self.user.id, self.on_twitch_event)
+        charity_stop_id     = await self.eventsub.listen_channel_charity_campaign_stop(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to charity_events")
 
@@ -365,8 +449,8 @@ class TwitchEvents:
         channel.shoutout.create
         channel.shoutout.receive
         """
-        shoutout_create_id  = await self.eventsub.listen_channel_shoutout_create(self.user.id, self.user.id, teh.on_shoutout_create)
-        shoutout_receive_id = await self.eventsub.listen_channel_shoutout_receive(self.user.id, self.user.id,  teh.on_shoutout_receive)
+        shoutout_create_id  = await self.eventsub.listen_channel_shoutout_create(self.user.id, self.user.id, self.on_twitch_event)
+        shoutout_receive_id = await self.eventsub.listen_channel_shoutout_receive(self.user.id, self.user.id,  self.on_twitch_event)
 
         self.logger.info("successfully subscribed to shoutout_events")
 
@@ -381,10 +465,10 @@ class TwitchEvents:
         channel.subscription.gift
         channel.subscription.message
         """
-        subscribe_id          = await self.eventsub.listen_channel_subscribe(self.user.id, teh.on_subscribe)
-        sub_end_id            = await self.eventsub.listen_channel_subscription_end(self.user.id, teh.on_subscription_end)
-        sub_gift_id           = await self.eventsub.listen_channel_subscription_gift(self.user.id, teh.on_subscription_gift)
-        sub_message_id        = await self.eventsub.listen_channel_subscription_message(self.user.id, teh.on_subscription_message)
+        subscribe_id          = await self.eventsub.listen_channel_subscribe(self.user.id, self.on_twitch_event)
+        sub_end_id            = await self.eventsub.listen_channel_subscription_end(self.user.id, self.on_twitch_event)
+        sub_gift_id           = await self.eventsub.listen_channel_subscription_gift(self.user.id, self.on_twitch_event)
+        sub_message_id        = await self.eventsub.listen_channel_subscription_message(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to subscribe_events")
 
@@ -399,15 +483,31 @@ class TwitchEvents:
         channel.moderator.remove
         channel.ad_break.begin 
         """
+        mod_add_id          = await self.eventsub.listen_channel_moderator_add(self.user.id, self.on_twitch_event)
+        mod_remove_id       = await self.eventsub.listen_channel_moderator_remove(self.user.id, self.on_twitch_event)
+        ad_break_begin_id   = await self.eventsub.listen_channel_ad_break_begin(self.user.id, self.on_twitch_event)
 
+        self.logger.info("successfully subscribed to moderate_events")
+
+        self.logger.debug(f'twitch event trigger channel.moderator.add -t {self.user.id} -u {mod_add_id} -T websocket') 
+        self.logger.debug(f'twitch event trigger channel.moderator.remove -t {self.user.id} -u {mod_remove_id} -T websocket') 
+        self.logger.debug(f'twitch event trigger channel.ad_break.begin -t {self.user.id} -u {ad_break_begin_id} -T websocket')
     async def listen_channel_action_events(self):
         """
         channel.cheer 
         channel.follow 
         channel.raid 
         """
-        sub_message_id = await self.eventsub.listen_channel_cheer(self.user.id, self.onChannelCheer)
-        self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {sub_message_id} -T websocket') 
+        raid_id = await self.eventsub.listen_channel_raid(self.on_twitch_event, 
+                                                        None,self.user.id)
+        follow_id = await self.eventsub.listen_channel_follow_v2(self.user.id, 
+                                                                self.user.id, 
+                                                                self.on_twitch_event)
+        sub_message_id = await self.eventsub.listen_channel_cheer(self.user.id, self.on_twitch_event)
+        self.sub_id_map.update({"channel.raid": raid_id})
+        self.sub_id_map.update({"channel.follow": follow_id})
+        self.sub_id_map.update({"channel.cheer": sub_message_id})
+        #self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {sub_message_id} -T websocket') 
 
 
     async def onChannelCheer(self, x):
