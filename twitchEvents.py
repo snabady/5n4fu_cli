@@ -252,10 +252,7 @@ class TwitchEvents:
             self.sub_id_map.update({"channel.raid": raid_id})
             self.sub_id_map.update({"channel.follow": follow_id})
 
-            self.logger.info(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket')
-            self.logger.info(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket')
-            self.logger.info(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket')
-
+           
         except Exception as e:
             self.logger.error(e)
          
@@ -279,19 +276,17 @@ class TwitchEvents:
         """
         streamonline_id     = await self.eventsub.listen_stream_online(self.user.id,
                                                                        self.on_twitch_event)  
-        self.logger.debug(f'twitch event trigger stream.online -t {self.user.id} -u {streamonline_id} -T websocket') 
-
         streamoffline_id    = await self.eventsub.listen_stream_offline(self.user.id,
                                                                         self.on_twitch_event)   
-        self.logger.debug(f'twitch event trigger stream.offline -t {self.user.id} -u {streamoffline_id} -T websocket') 
-
         channelupdatev2_id  = await self.eventsub.listen_channel_update_v2(self.user.id,
                                                                            self.on_twitch_event)
-        self.logger.debug(f'twitch event trigger channel.update -t {self.user.id} -u {channelupdatev2_id} -T websocket') 
-
         channelupdate_id    = await self.eventsub.listen_channel_update(self.user.id,
                                                                         self.on_twitch_event)
-        self.logger.debug(f'twitch event trigger channel.update -t {self.user.id} -u {channelupdate_id} -T websocket') 
+        
+        self.sub_id_map.update({"stream.online": streamonline_id})
+        self.sub_id_map.update({"stream.offline": streamoffline_id})
+        self.sub_id_map.update({"channel.update_v2": channelupdatev2_id})
+        self.sub_id_map.update({"channel.update": channelupdate_id})
         self.logger.info("successfully subscribed to stream_info_events")
     
     async def listen_channel_goal_events(self):
@@ -307,9 +302,9 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to channel_goal_events")
 
-        self.logger.debug(f'twitch event trigger channel.goal.begin -t {self.user.id} -u {goal_begin_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.goal.end -t {self.user.id} -u {goal_end_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.goal.progress -t {self.user.id} -u {goal_progress_id} -T websocket') 
+        self.sub_id_map.update({"channel.goal.begin": goal_begin_id})
+        self.sub_id_map.update({"channel.goal.end": goal_end_id})
+        self.sub_id_map.update({"channel.goal.progress": goal_progress_id})
 
     async def listen_channel_polls(self):
         """
@@ -323,9 +318,9 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to channel_poll_events")
 
-        self.logger.debug(f'twitch event trigger channel.poll.begin -t {self.user.id} -u {poll_begin_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.poll.end -t {self.user.id} -u {poll_end_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.poll.progress -t {self.user.id} -u {poll_progress_id} -T websocket') 
+        self.sub_id_map.update({"channel.poll.begin": poll_begin_id})
+        self.sub_id_map.update({"channel.poll.end": poll_end_id})
+        self.sub_id_map.update({"channel.poll.progress": poll_progress_id})
 
     async def listen_channel_predictions(self):
         """
@@ -342,11 +337,10 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to channel_prediction_events")
 
-        self.logger.debug(f'twitch event trigger channel.prediction.begin -t {self.user.id} -u {prediction_begin_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.prediction.end -t {self.user.id} -u {prediction_end_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.prediction.lock -t {self.user.id} -u {prediction_lock_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.prediction.progress -t {self.user.id} -u {prediction_progress_id} -T websocket') 
-
+        self.sub_id_map.update({"channel.prediction.begin": prediction_begin_id})
+        self.sub_id_map.update({"channel.prediction.end": prediction_end_id})
+        self.sub_id_map.update({"channel.prediction.lock": prediction_lock_id})
+        self.sub_id_map.update({"channel.prediction.progress": prediction_progress_id})
 
     async def listen_channel_points(self):
         """
@@ -367,15 +361,9 @@ class TwitchEvents:
         self.sub_id_map.update({"channel.channel_points_custom_reward.update": reward_update_id})
         self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.add": redemption_add_id})
         self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.update": redemption_update_id})
-        
+
 
         self.logger.info("successfully subscribed to channel_point_events")
-
-        self.logger.debug(f'twitch event trigger channel.channel_points_custom_reward.add -t {self.user.id} -u {reward_add_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.channel_points_custom_reward.remove -t {self.user.id} -u {reward_remove_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.channel_points_custom_reward.update -t {self.user.id} -u {reward_update_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.channel_points_custom_reward_redemption.add -t {self.user.id} -u {redemption_add_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.channel_points_custom_reward_redemption.update -t {self.user.id} -u {redemption_update_id} -T websocket') 
 
 
     async def listen_hype_train(self):
@@ -391,10 +379,9 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to hype_train_events")
 
-        self.logger.debug(f'twitch event trigger channel.hype_train.begin -t {self.user.id} -u {hype_train_begin_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.hype_train.end -t {self.user.id} -u {hype_train_end_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.hype_train.progress -t {self.user.id} -u {hype_train_progress_id} -T websocket') 
-
+        self.sub_id_map.update({"channel.hype_train.begin": hype_train_begin_id})
+        self.sub_id_map.update({"channel.hype_train.end": hype_train_end_id})   
+        self.sub_id_map.update({"channel.hype_train.progress": hype_train_progress_id})
 
     async def listen_ban_events(self):
         """
@@ -416,11 +403,10 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to ban_events")
 
-        self.logger.debug(f'twitch event trigger channel.ban -t {self.user.id} -u {ban_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.unban -t {self.user.id} -u {unban_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.unban_request.create -t {self.user.id} -u {unban_request_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.unban_request.resolve -t {self.user.id} -u {unban_request_resolve} -T websocket') 
-        pass
+        self.sub_id_map.update({"channel.ban": ban_id})
+        self.sub_id_map.update({"channel.unban": unban_id})
+        self.sub_id_map.update({"channel.unban_request.create": unban_request_id})
+        self.sub_id_map.update({"channel.unban_request.resolve": unban_request_resolve})
 
 
 
@@ -438,11 +424,10 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to charity_events")
 
-        self.logger.debug(f'twitch event trigger channel.charity_campaign.donate -t {self.user.id} -u {charity_donate_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.charity_campaign.progress -t {self.user.id} -u {charity_progress_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.charity_campaign.start -t {self.user.id} -u {charity_start_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.charity_campaign.stop -t {self.user.id} -u {charity_stop_id} -T websocket') 
-        pass
+        self.sub_id_map.update({"channel.charity_campaign.donate": charity_donate_id})
+        self.sub_id_map.update({"channel.charity_campaign.progress": charity_progress_id})
+        self.sub_id_map.update({"channel.charity_campaign.start": charity_start_id})
+        self.sub_id_map.update({"channel.charity_campaign.stop": charity_stop_id})
 
     async def listen_shoutout_events(self):
         """
@@ -454,9 +439,8 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to shoutout_events")
 
-        self.logger.debug(f'twitch event trigger channel.shoutout.create -t {self.user.id} -u {shoutout_create_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.shoutout.receive -t {self.user.id} -u {shoutout_receive_id} -T websocket') 
-        pass
+        self.sub_id_map.update({"channel.shoutout.create": shoutout_create_id})
+        self.sub_id_map.update({"channel.shoutout.receive": shoutout_receive_id})
 
     async def listen_subscribe_events(self):
         """
@@ -472,10 +456,10 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to subscribe_events")
 
-        self.logger.debug(f'twitch event trigger channel.subscribe -t {self.user.id} -u {subscribe_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.subscription.end -t {self.user.id} -u {sub_end_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.subscription.gift -t {self.user.id} -u {sub_gift_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {sub_message_id} -T websocket') 
+        self.sub_id_map.update({"channel.subscribe": subscribe_id})
+        self.sub_id_map.update({"channel.subscription.end": sub_end_id})
+        self.sub_id_map.update({"channel.subscription.gift": sub_gift_id})
+        self.sub_id_map.update({"channel.subscription.message": sub_message_id})
 
     async def listen_moderate_events(self):
         """
@@ -489,9 +473,10 @@ class TwitchEvents:
 
         self.logger.info("successfully subscribed to moderate_events")
 
-        self.logger.debug(f'twitch event trigger channel.moderator.add -t {self.user.id} -u {mod_add_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.moderator.remove -t {self.user.id} -u {mod_remove_id} -T websocket') 
-        self.logger.debug(f'twitch event trigger channel.ad_break.begin -t {self.user.id} -u {ad_break_begin_id} -T websocket')
+        self.sub_id_map.update({"channel.moderator.add": mod_add_id})
+        self.sub_id_map.update({"channel.moderator.remove": mod_remove_id})
+        self.sub_id_map.update({"channel.ad_break.begin": ad_break_begin_id})
+
     async def listen_channel_action_events(self):
         """
         channel.cheer 
