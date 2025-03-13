@@ -41,7 +41,7 @@ async def main():
     
         try:
             while True:
-                await asyncio.sleep(50)
+                await asyncio.sleep(0.1)
          
         except asyncio.CancelledError:
             print("cu later OOO")

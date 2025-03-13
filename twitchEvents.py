@@ -156,7 +156,7 @@ class TwitchEvents:
 
 
     async def on_twitch_event(self, x):
-        self.logger.debug(f'Event: {x}')
+        
         await self.eventqueue.put(x)
         self.logger.debug(f'subscription[{x.subscription.type}] - added to queue')  
         

@@ -28,22 +28,7 @@ logger = logging.getLogger(__name__)
 logger = add_logger_handler(logger)
 logger.setLevel(logging.DEBUG)
 
-async def send_to_websocket(x):
-    if isinstance(x, ChannelSubscribeEvent):
-        pass 
 
-async def send_to_db(x):
-    if isinstance(x, ChannelSubscribeEvent):
-        pass
-
-async def send_to_log(x):
-    if isinstance(x, ChannelSubscribeEvent):
-        pass
-
-async def do_xcow_things(x):
-    if isinstance(x, ChannelSubscribeEvent):
-        # TODO asyncio.subprocess !!!
-        pass
 
 async def onSubscribe(x: ChannelSubscribeEvent, twitch):
     """
@@ -125,11 +110,12 @@ async def on_goal_begin(x: GoalEvent, twitch):
     """
     goal begin
     """
-    logger.info(f'Eventdata:\n{x.event.to_dict()}')
+    logger.info(f'hae???????????????????????????')
+    logger.info(f'Eventdata:\n{x}')
     
 
 async def on_goal_progress(x: GoalEvent, twitch):
-    logger.info(f'Eventdata:\n{x.event.to_dict()}')
+    logger.info(f'Eventdata:\n{x}')
     
 
 async def on_goal_end(x: GoalEvent, twitch):

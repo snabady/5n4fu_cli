@@ -158,8 +158,8 @@ async def display_subscribe_menu():
 async def display_ban_menu():
     print("1: channel.ban")
     print("2: channel.unban")
-    print("3: channel.unban.request.create")
-    print("4: channel.unban.request.resolve")
+    #print("3: channel.unban.request.create")
+    #print("4: channel.unban.request.resolve")
     print("0: exit")
     try:
         # Take the user input as an integer
@@ -185,6 +185,7 @@ async def display_charity_menu():
 
     
 async def run_subprocess(cmd):
+    print(f"cmd: {cmd}")
     process = await asyncio.create_subprocess_shell(
                             cmd,
                             stdout=asyncio.subprocess.PIPE,
@@ -238,18 +239,21 @@ async def choicechecker(choice, tevents):
             user_id = tevents.user.id
             cmd = f'twitch event trigger channel.unban -t {user_id} -u {sub_id} -T websocket'
             await run_subprocess(cmd)
-        elif subchoice == 3:
-            print("channel.unban.request.create")
-            sub_id = tevents.sub_id_map.get("channel.unban.request.create")
-            user_id = tevents.user.id
-            cmd = f'twitch event trigger channel.unban.request.create -t {user_id} -u {sub_id} -T websocket'
-            await run_subprocess(cmd)
-        elif subchoice == 4:
-            print("channel.unban.request.resolve")
-            sub_id = tevents.sub_id_map.get("channel.unban.request.resolve")
-            user_id = tevents.user.id
-            cmd = f'twitch event trigger channel.unban.request.resolve -t {user_id} -u {sub_id} -T websocket'
-            await run_subprocess(cmd)
+            """
+            # TODO: implement these events 
+            elif subchoice == 3:
+                print("channel.unban.request.create")
+                sub_id = tevents.sub_id_map.get("channel.unban.request.create")
+                user_id = tevents.user.id
+                cmd = f'twitch event trigger channel.unban.request.create -t {user_id} -u {sub_id} -T websocket'
+                await run_subprocess(cmd)
+            elif subchoice == 4:
+                print("channel.unban.request.resolve")
+                sub_id = tevents.sub_id_map.get("channel.unban.request.resolve")
+                user_id = tevents.user.id
+                cmd = f'twitch event trigger channel.unban.request.resolve -t {user_id} -u {sub_id} -T websocket'
+                await run_subprocess(cmd)
+            """
         elif subchoice == 0:
             return
     elif choice == 3:
@@ -258,7 +262,9 @@ async def choicechecker(choice, tevents):
             print("channel.goal.begin")
             sub_id = tevents.sub_id_map.get("channel.goal.begin")
             user_id = tevents.user.id
+
             cmd = f'twitch event trigger channel.goal.begin -t {user_id} -u {sub_id} -T websocket'
+            
             await run_subprocess(cmd)
         elif subchoice == 2:
             print("channel.goal.progress")
