@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-1. Install and set up **twitch-cli** as described in the [Twitch Docs](https://dev.twitch.tv/docs/cli/).
+1. Install and set up **twitch-cli** as  described in the [Twitch Docs](https://dev.twitch.tv/docs/cli/).
 you have to finish until u generated a token! 
 2. Run:  
    ```sh
