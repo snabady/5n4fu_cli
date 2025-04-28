@@ -14,28 +14,24 @@ async def main():
      when it is running copy paste the output-command and put it into new console *magic*
     """
 
-    # this for mocking with cli
-    #async with twitchEvents.TwitchEvents(use_cli_conn=True) as tevents:
-    #    try:
-    #        await tevents.collection_of_events_not_supported_with_cli()
-            #await tevents.subCliEventsTEMPO()
-            #await tevents.listen_ban_events()
-            #await tevents.listen_channel_goal_events()
-            #await tevents.listen_channel_points()
-            #await tevents.listen_channel_polls()
-            #await tevents.listen_channel_predictions()
-            #await tevents.listen_hype_train()
-            #await tevents.listen_shoutout_events()
-            #await tevents.listen_stream_info_events()
-            #await tevents.listen_subscribe_events()
-            #await tevents.listen_charity_events()
-    #    except Exception as e:
-    #        print(e)
-    # this for real connection
 
     async with twitchEvents.TwitchEvents(db=None) as tevents:
         try: 
-            await tevents.subCliEventsTEMPO()  
+            #await tevents.subCliEventsTEMPO()  
+            await tevents.listen_subscribe_events()
+            #await tevents.subCliEventsTEMPO()
+            await tevents.listen_ban_events()
+            await tevents.listen_channel_goal_events()
+            await tevents.listen_channel_points()
+            await tevents.listen_channel_polls()
+            await tevents.listen_channel_predictions()
+            await tevents.listen_hype_train()
+            await tevents.listen_shoutout_events()
+            await tevents.listen_stream_info_events()
+            
+            await tevents.listen_charity_events()
+            await tevents.listen_channel_action_events()
+            await tevents.listen_channel_moderate_events()
         except Exception as e:
             print(e)
     

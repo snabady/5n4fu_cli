@@ -62,12 +62,19 @@ async def display_stream_info_menu():
     
 
 async def display_points_menu():
-    print("1: channel.channel_points_custom_reward_redemption.add")
-    print("2: channel.channel_points_custom_reward_redemption.update")
-    print("3: channel.channel_points_custom_reward_redemption.remove")
+    '''
+    channel.channel_points_custom_reward.add 
+        channel.channel_points_custom_reward.remove 
+        channel.channel_points_custom_reward.update 
+        channel.channel_points_custom_reward_redemption.add
+        channel.channel_points_custom_reward_redemption.update'''
+
+    print("1: channel.channel_points_custom_reward.add")
+    print("2: channel.channel_points_custom_reward.update")
+    print("3: channel.channel_points_custom_reward.remove")
     print("4: channel.channel_points_custom_reward_redemption.add")
     print("5: channel.channel_points_custom_reward_redemption.update")
-    print("6: channel.channel_points_custom_reward_redemption.remove")
+
     print("0: exit")
 
     try:
@@ -276,23 +283,30 @@ async def choicechecker(choice, tevents):
             return
     elif choice == 4:
         subchoice = await display_points_menu()
+        '''
+        channel.channel_points_custom_reward.add 
+        channel.channel_points_custom_reward.remove 
+        channel.channel_points_custom_reward.update 
+        channel.channel_points_custom_reward_redemption.add
+        channel.channel_points_custom_reward_redemption.update
+        '''
         if subchoice == 1:
-            print("channel.channel_points_custom_reward_redemption.add")
-            sub_id = tevents.sub_id_map.get("channel.channel_points_custom_reward_redemption.add")
+            print("channel.channel_points_custom_reward.add")
+            sub_id = tevents.sub_id_map.get("channel.channel_points_custom_reward.add")
             user_id = tevents.user.id
-            cmd = f'twitch event trigger channel.channel_points_custom_reward_redemption.add -t {user_id} -u {sub_id} -T websocket'
+            cmd = f'twitch event trigger channel.channel_points_custom_reward.add -t {user_id} -u {sub_id} -T websocket'
             await run_subprocess(cmd)
         elif subchoice == 2:
-            print("channel.channel_points_custom_reward_redemption.update")
-            sub_id = tevents.sub_id_map.get("channel.channel_points_custom_reward_redemption.update")
+            print("channel.channel_points_custom_reward.update")
+            sub_id = tevents.sub_id_map.get("channel.channel_points_custom_reward.update")
             user_id = tevents.user.id
-            cmd = f'twitch event trigger channel.channel_points_custom_reward_redemption.update -t {user_id} -u {sub_id} -T websocket'
+            cmd = f'twitch event trigger channel.channel_points_custom_reward.update -t {user_id} -u {sub_id} -T websocket'
             await run_subprocess(cmd)
         elif subchoice == 3:    
-            print("channel.channel_points_custom_reward_redemption.remove")
-            sub_id = tevents.sub_id_map.get("channel.channel_points_custom_reward_redemption.remove")
+            print("channel.channel_points_custom_reward.remove")
+            sub_id = tevents.sub_id_map.get("channel.channel_points_custom_reward.remove")
             user_id = tevents.user.id
-            cmd = f'twitch event trigger channel.channel_points_custom_reward_redemption.remove -t {user_id} -u {sub_id} -T websocket'
+            cmd = f'twitch event trigger channel.channel_points_custom_reward.remove -t {user_id} -u {sub_id} -T websocket'
             await run_subprocess(cmd)
         elif subchoice == 4:
             print("channel.channel_points_custom_reward_redemption.add")    
@@ -453,7 +467,7 @@ async def choicechecker(choice, tevents):
             print("channel.subscription.gift")
             sub_id = tevents.sub_id_map.get("channel.subscription.gift")
             user_id = tevents.user.id
-            cmd = f'twitch event trigger channel.subscription.gift -t {user_id} -u {sub_id} -T websocket'
+            cmd = f'twitch event trigger channel.subscription.gift -t {user_id} -u {sub_id} -v1 -T websocket'
             await run_subprocess(cmd)
         elif subchoice == 3:
             print("channel.subscription.message")
@@ -556,8 +570,8 @@ async def main():
     #mydb = mydb.MyDB()
     async with twitchEvents.TwitchEvents(use_cli_conn=True) as tevents:
         try:
-            
-            await tevents.subCliEventsTEMPO()
+            await tevents.listen_subscribe_events()
+            #await tevents.subCliEventsTEMPO()
             await tevents.listen_ban_events()
             await tevents.listen_channel_goal_events()
             await tevents.listen_channel_points()
@@ -566,12 +580,12 @@ async def main():
             await tevents.listen_hype_train()
             await tevents.listen_shoutout_events()
             await tevents.listen_stream_info_events()
-            await tevents.listen_subscribe_events()
+            
             await tevents.listen_charity_events()
             await tevents.listen_channel_action_events()
             await tevents.listen_channel_moderate_events()
         except Exception as e:
-            print(e)
+            print(f'error while scubscribing........\n\t{e}')
 
         try:
             while True:

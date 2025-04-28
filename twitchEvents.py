@@ -1,6 +1,6 @@
 from twitchAPI.twitch import Twitch, TwitchUser
 from twitchAPI.oauth import UserAuthenticator, UserAuthenticationStorageHelper
-from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent, StreamOnlineEvent, StreamOfflineEvent, ChannelUpdateEvent, GoalEvent, ChannelPredictionEvent, ChannelPointsCustomRewardRedemptionUpdateEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelPointsCustomRewardUpdateEvent, ChannelPointsCustomRewardRemoveEvent, ChannelPointsCustomRewardAddEvent, HypeTrainEvent, HypeTrainEndEvent, ChannelUnbanRequestResolveEvent, ChannelBanEvent, ChannelUnbanEvent, ChannelUnbanRequestCreateEvent, CharityCampaignProgressEvent, CharityCampaignStartEvent, CharityCampaignStopEvent, CharityDonationEvent, ChannelSubscriptionEndEvent, ChannelSubscriptionGiftEvent, ChannelSubscriptionMessageEvent, ChannelShoutoutCreateEvent, ChannelShoutoutReceiveEvent
+from twitchAPI.object.eventsub import ChannelSubscribeEvent, ChannelRaidEvent, ChannelFollowEvent, StreamOnlineEvent, StreamOfflineEvent, ChannelUpdateEvent, GoalEvent, ChannelPredictionEvent, ChannelPointsCustomRewardRedemptionUpdateEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelPointsCustomRewardUpdateEvent, ChannelPointsCustomRewardRemoveEvent, ChannelPointsCustomRewardAddEvent, HypeTrainEvent, HypeTrainEndEvent, ChannelUnbanRequestResolveEvent, ChannelBanEvent, ChannelUnbanEvent, ChannelUnbanRequestCreateEvent, CharityCampaignProgressEvent, CharityCampaignStartEvent, CharityCampaignStopEvent, CharityDonationEvent, ChannelSubscriptionEndEvent, ChannelSubscriptionGiftEvent, ChannelSubscriptionMessageEvent, ChannelShoutoutCreateEvent, ChannelShoutoutReceiveEvent, ChannelCheerEvent,ChannelPointsAutomaticRewardRedemptionAddEvent
 from twitchAPI.eventsub.websocket import EventSubWebsocket
 from twitchAPI.helper import first
 from typing import Tuple, Optional
@@ -136,6 +136,7 @@ class TwitchEvents:
         ChannelPointsCustomRewardUpdateEvent: teh.on_reward_update,
         ChannelPointsCustomRewardRemoveEvent: teh.on_reward_remove,
         ChannelPointsCustomRewardAddEvent: teh.on_reward_add,
+        ChannelPointsAutomaticRewardRedemptionAddEvent: teh.on_auto_redemption,
         HypeTrainEvent: teh.on_hype_train_begin,
         HypeTrainEndEvent: teh.on_hype_train_end,
         ChannelUnbanRequestResolveEvent: teh.on_unban_request_resolve,
@@ -150,13 +151,15 @@ class TwitchEvents:
         ChannelSubscriptionGiftEvent: teh.on_subscription_gift,
         ChannelSubscriptionMessageEvent: teh.on_subscription_message,
         ChannelShoutoutCreateEvent: teh.on_shoutout_create,
-        ChannelShoutoutReceiveEvent: teh.on_shoutout_receive    
+        ChannelShoutoutReceiveEvent: teh.on_shoutout_receive,
+        ChannelCheerEvent: teh.on_channel_cheer,
     }    
 
 
 
     async def on_twitch_event(self, x):
-        self.logger.debug(f'Event: {x}')
+        self.logger.debug(type(x))
+        #self.logger.debug(f'Event: {x}') # TODO why strange behaviour with goal-event-> start goal
         await self.eventqueue.put(x)
         self.logger.debug(f'subscription[{x.subscription.type}] - added to queue')  
         
@@ -247,7 +250,10 @@ class TwitchEvents:
                                                             None,self.user.id)
             follow_id = await self.eventsub.listen_channel_follow_v2(self.user.id, 
                                                                     self.user.id, 
-                                                                    self.on_twitch_event)
+                                                                  self.on_twitch_event)
+            self.logger.debug(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket') 
+            self.logger.debug(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket') 
+            self.logger.debug(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket') 
             self.sub_id_map.update({"channel.subscribe": sub_id})
             self.sub_id_map.update({"channel.raid": raid_id})
             self.sub_id_map.update({"channel.follow": follow_id})
@@ -355,6 +361,8 @@ class TwitchEvents:
         reward_update_id     = await self.eventsub.listen_channel_points_custom_reward_update(self.user.id, self.on_twitch_event)
         redemption_add_id    = await self.eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self.on_twitch_event)
         redemption_update_id = await self.eventsub.listen_channel_points_custom_reward_redemption_update(self.user.id, self.on_twitch_event)
+        auto_reward_redemption = self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.on_twitch_event)
+        
 
         self.sub_id_map.update({"channel.channel_points_custom_reward.add": reward_add_id})
         self.sub_id_map.update({"channel.channel_points_custom_reward.remove": reward_remove_id})
@@ -446,7 +454,7 @@ class TwitchEvents:
         """
         channel.subscribe
         channel.subscription.end
-        channel.subscription.gift
+        channel.subscription.gift0
         channel.subscription.message
         """
         subscribe_id          = await self.eventsub.listen_channel_subscribe(self.user.id, self.on_twitch_event)
@@ -455,7 +463,7 @@ class TwitchEvents:
         sub_message_id        = await self.eventsub.listen_channel_subscription_message(self.user.id, self.on_twitch_event)
 
         self.logger.info("successfully subscribed to subscribe_events")
-
+        self.logger.debug(f'sub_gift_id: {sub_gift_id}\tsub_message_id: {sub_message_id}\tsub_end_id: {sub_end_id}')
         self.sub_id_map.update({"channel.subscribe": subscribe_id})
         self.sub_id_map.update({"channel.subscription.end": sub_end_id})
         self.sub_id_map.update({"channel.subscription.gift": sub_gift_id})
@@ -522,7 +530,7 @@ class TwitchEvents:
         except TwitchBackendException as e:
             self.logger.error(f'TwitchBackendException: {e}')
         except Exception as e:
-            self.logger.error(e)
+            self.logger.error('collection_of_events' , e)
         
         
         
