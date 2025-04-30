@@ -361,7 +361,7 @@ class TwitchEvents:
         reward_update_id     = await self.eventsub.listen_channel_points_custom_reward_update(self.user.id, self.on_twitch_event)
         redemption_add_id    = await self.eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self.on_twitch_event)
         redemption_update_id = await self.eventsub.listen_channel_points_custom_reward_redemption_update(self.user.id, self.on_twitch_event)
-        auto_reward_redemption = self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.on_twitch_event)
+        auto_reward_redemption = await self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.on_twitch_event)
         
 
         self.sub_id_map.update({"channel.channel_points_custom_reward.add": reward_add_id})

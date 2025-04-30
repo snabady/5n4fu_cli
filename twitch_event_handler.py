@@ -19,9 +19,9 @@ from obs_websocket import my_obsws
 async def setRaid(bools):
     wst = my_obsws.Obs_ws()
 
-    await my_obsws.init_obswebsocket_ws()
-    raid_id = await my_obsws.get_scene_item_id("main","raid")
-    await my_obsws.set_source_visibility("main",raid_id,bools)
+    await wst.init_obswebsocket_ws()
+    raid_id = await wst.get_scene_item_id("main","raid")
+    await wst.set_source_visibility("main",raid_id,bools)
 
 subcnt = 0
 followcnt = 62
@@ -82,6 +82,9 @@ async def onSubscribe(x: ChannelSubscribeEvent, twitch):
                 async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/subs.txt", "w") as f:
                     await f.write(f"Subs: {subcnt}/1")
 
+                async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastsub.txt", "w") as f:
+                    await f.write(f'last sub, thank you\n{x.event.user_name}')
+
         except Exception as e:
             logger.error(f'exceptiopn: {e}')
     #subprocess.run(['xcowsay', '--monitor',  '1', blub, '--image=' '/home/snafu/Downloads/cow.png', '--think' ,'--bubble-at=-230,-6',  ])
@@ -112,7 +115,7 @@ async def on_channel_raid(x: ChannelRaidEvent, twitch):
     subprocess.Popen(['xcowsay', '--monitor',  '0', blub, '--image=' '/home/snafu/src/scripte_twitch/img/glitch-minecraft-outlined-b4903b26224ceb4462b1.png', '--think' , '--time=240','--at=1080,0',  ])
     #proc = subprocess.Popen(['mpv', '--no-video', '--volume=50',  '/home/snafu/src/scripte_twitch/vids/kapernfahrt.webm'])
     proc = await asyncio.create_subprocess_exec(
-        'mpv', '--no-video', '--volume=50', '--idle=no', '/home/snafu/src/scripte_twitch/vids/kapernfahrt.webm',
+        'mpv', '--no-video', '--volume=100', '--idle=no', '/home/snafu/src/scripte_twitch/vids/kapernfahrt.webm',
         stdin=asyncio.subprocess.DEVNULL,  # wichtig!
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.DEVNULL
@@ -141,6 +144,9 @@ async def on_follow(x: ChannelFollowEvent, twitch):
             followcnt += 1
             async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/follower_goal.txt", "w") as f:
                 await f.write(f"Follower: {followcnt}/70")
+
+            async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastfollow.txt", "w") as f:
+                await f.write(f"last follow, thank u\n{x.event.user_name}")
 
     except Exception as e:
         logger.error(f'exceptiopn: {e}')
