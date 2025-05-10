@@ -15,7 +15,7 @@ async def main():
     """
 
 
-    async with twitchEvents.TwitchEvents(db=None) as tevents:
+    async with twitchEvents.TwitchEvents(db=None, use_sna_overlay=False) as tevents:
         try: 
             #await tevents.subCliEventsTEMPO()  
             await tevents.listen_subscribe_events()
@@ -29,9 +29,9 @@ async def main():
             await tevents.listen_shoutout_events()
             await tevents.listen_stream_info_events()
             
-            await tevents.listen_charity_events()
+            #await tevents.listen_charity_events()
             await tevents.listen_channel_action_events()
-            await tevents.listen_channel_moderate_events()
+            #await tevents.listen_channel_moderate_events()
         except Exception as e:
             print(e)
     

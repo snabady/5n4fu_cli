@@ -180,3 +180,4 @@ cython_debug/
 .pypirc
 twitch.session.sql
 db/help.md
+5n4fu.code-workspace

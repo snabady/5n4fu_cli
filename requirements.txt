@@ -8,3 +8,4 @@ flask
 mysql-connector-python
 obs-websocket-py
 simpleobsws
+aiofiles

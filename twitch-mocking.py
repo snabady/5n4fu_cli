@@ -524,7 +524,8 @@ async def choicechecker(choice, tevents):
             print("channel.follow")
             sub_id = tevents.sub_id_map.get("channel.follow")
             user_id = tevents.user.id   
-            cmd = f'twitch event trigger channel.follow -t {user_id} -u {sub_id} -T websocket'       
+            cmd = f'twitch event trigger channel.follow -t {user_id} -u {sub_id} -T websocket' 
+            print (cmd)      
             await run_subprocess(cmd)
         elif subchoice == 3:
             print("channel.raid")
@@ -580,12 +581,16 @@ async def main():
             await tevents.listen_hype_train()
             await tevents.listen_shoutout_events()
             await tevents.listen_stream_info_events()
-            
-            await tevents.listen_charity_events()
+                        #await tevents.listen_charity_events()
             await tevents.listen_channel_action_events()
-            await tevents.listen_channel_moderate_events()
+            #await tevents.listen_channel_moderate_events()
         except Exception as e:
+            print(e)
+       
             print(f'error while scubscribing........\n\t{e}')
+            
+    
+
 
         try:
             while True:

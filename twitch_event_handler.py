@@ -7,24 +7,24 @@ import os
 import sys
 import aiofiles
 #/home/snafu/src/twitch-irc/obs_websocket/my_obsws.py
-script_dir = os.path.abspath("/home/snafu/src/twitch-irc/")  # <-- Hier deinen echten Pfad eintragen!
+script_dir = os.path.abspath("/home/snafu/src/twitch-irc/") 
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 from scripte.templateMgr import template_manager
 myobs_dir = os.path.abspath("/home/snafu/src/twitch-irc/obs_websocket/")
 if script_dir not in sys.path:
-    sys.path.append(mybobs_dir)
+    sys.path.append(myobs_dir)
 from obs_websocket import my_obsws 
 
 async def setRaid(bools):
     wst = my_obsws.Obs_ws()
 
     await wst.init_obswebsocket_ws()
-    raid_id = await wst.get_scene_item_id("main","raid")
-    await wst.set_source_visibility("main",raid_id,bools)
+    raid_id = await wst.get_scene_item_id("raid","__raid")
+    await wst.set_source_visibility("raid",raid_id,bools)
 
-subcnt = 0
-followcnt = 62
+subcnt = 3
+followcnt = 67
 def add_logger_handler(logger):
     handler = colorlog.StreamHandler()
     formatter = colorlog.ColoredFormatter(
@@ -74,19 +74,26 @@ async def onSubscribe(x: ChannelSubscribeEvent, twitch):
     else:
         blub = f'{x.event.user_name} bist deppert, danke fuer deinen sub'
         try:
-            lock = asyncio.Lock()
             
+            lock = asyncio.Lock()
+                
             async with lock:
                 global subcnt
                 subcnt += 1
                 async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/subs.txt", "w") as f:
-                    await f.write(f"Subs: {subcnt}/1")
+                    await f.write(f"{subcnt}/1")
 
-                async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastsub.txt", "w") as f:
-                    await f.write(f'last sub, thank you\n{x.event.user_name}')
+                async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastsub.txt", "a") as f:
+                    await f.write(f'{x.event.user_name}\n')
 
         except Exception as e:
             logger.error(f'exceptiopn: {e}')
+        proc = await asyncio.create_subprocess_exec(
+            'mpv', '--no-video', '--volume=100', '--idle=no', '/home/snafu/src/scripte_twitch/audio/blubsub.mp3',
+            stdin=asyncio.subprocess.DEVNULL,  # wichtig!
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
     #subprocess.run(['xcowsay', '--monitor',  '1', blub, '--image=' '/home/snafu/Downloads/cow.png', '--think' ,'--bubble-at=-230,-6',  ])
     #'xcowsay', '--monitor', '1', blub, '--image=/home/snafu/src/scripte_twitch/img/glitch-minecraft-outlined-b4903b26224ceb4462b1.png', '--think'
     process = await asyncio.create_subprocess_exec(
@@ -134,7 +141,7 @@ async def on_follow(x: ChannelFollowEvent, twitch):
     https://dev.twitch.tv/docs/eventsub/eventsub-reference/
     """
     blub = f'{x.event.user_name} danke fuers folgen! <3'
-    subprocess.run(['xcowsay', '--monitor',  '0', blub, '--image=' '/home/snafu/pics/stream/sna.png', '--think'   ])
+    subprocess.Popen(['xcowsay', '--monitor',  '0', blub, '--image=' '/home/snafu/pics/stream/sna.png', '--think'   ])
     logger.info(f'received follow event')
     try:
         lock = asyncio.Lock()
@@ -143,10 +150,16 @@ async def on_follow(x: ChannelFollowEvent, twitch):
             global followcnt
             followcnt += 1
             async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/follower_goal.txt", "w") as f:
-                await f.write(f"Follower: {followcnt}/70")
+                await f.write(f"{followcnt}/70")
 
-            async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastfollow.txt", "w") as f:
-                await f.write(f"last follow, thank u\n{x.event.user_name}")
+            async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastfollow.txt", "a") as f:
+                await f.write(f"{x.event.user_name}\n")
+        proc = await asyncio.create_subprocess_exec(
+            'mpv', '--no-video', '--volume=100', '--idle=no', '/home/snafu/src/scripte_twitch/audio/blub.mp3',
+            stdin=asyncio.subprocess.DEVNULL,  # wichtig!
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
 
     except Exception as e:
         logger.error(f'exceptiopn: {e}')
@@ -360,7 +373,11 @@ async def on_subscription_gift(x: ChannelSubscriptionGiftEvent, twitch):
             global subcnt
             subcnt += int(x.event.total)
             async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/subs.txt", "w") as f:
-                await f.write(f"Subs: {subcnt}/1")
+                await f.write(f"{subcnt}/1")
+
+            async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastsub.txt", "a") as f:
+                await f.write(f'{x.event.user_name}\n') #???
+
 
     except Exception as e:
         logger.error(f'exceptiopn: {e}')
@@ -382,7 +399,24 @@ async def on_subscription_message(x: ChannelSubscriptionMessageEvent, twitch):
         'espeak-ng', '-v', 'mb-de1', msg
  
     )
-    await proc.wait()
+
+
+    lock = asyncio.Lock()
+    try: 
+        await proc.wait()
+        async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/stats/lastsub.txt", "a") as f:
+            await f.write(f'{x.event.user_name}\n')
+
+        async with lock:
+            global subcnt
+            logger.info("hello from the other side ......................................")
+            subcnt += 1
+            async with aiofiles.open("/home/snafu/src/scripte_twitch/data_files/subs.txt", "w") as f:
+                await f.write(f"{subcnt}/1")
+            logger.info("hello from the other side ......................................")
+    except Exception as e :
+        logger.error(e)
+
     x.event.user_name
     x.event.tier
     x.event.duration_months

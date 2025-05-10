@@ -13,7 +13,8 @@ import authscopes as auth_scope
 from twitchAPI.type import TwitchBackendException
 import db.mydb as mydb
 import asyncio
-
+import snafu_event_handler as seh
+import traceback
 class TwitchEvents:
     """
     Connects to Twitch-Event-Sub via websockets
@@ -30,7 +31,8 @@ class TwitchEvents:
 
     def __init__(self, 
                  use_cli_conn=False, 
-                 db=None):
+                 db=None,
+                 use_sna_overlay=False):
         """
         use_cli_conn    bool    default False
                                 if True -> mock-cli is used instead of production
@@ -51,6 +53,11 @@ class TwitchEvents:
         self.db = db
         if self.db != None:
             pass
+
+        if use_sna_overlay:
+            self.use_sna_overlay = use_sna_overlay
+        else:
+            self.use_sna_overlay = False
          
         self.setEnv()
 
@@ -70,7 +77,7 @@ class TwitchEvents:
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        # ??? deconstructor
+        # ??? deconstructor - 
         await self.eventsub.stop()
         await self.twitch.close()
         self.logger.debug("aexit")
@@ -155,6 +162,39 @@ class TwitchEvents:
         ChannelCheerEvent: teh.on_channel_cheer,
     }    
 
+    def get_eventmap_mat(self):
+        return     { 
+        ChannelSubscribeEvent: [teh.onSubscribe, seh.onSubscribe],
+        ChannelRaidEvent: teh.on_channel_raid,
+        ChannelFollowEvent: teh.on_follow,
+        StreamOnlineEvent: teh.on_stream_online,
+        StreamOfflineEvent: teh.on_stream_offline,
+        ChannelUpdateEvent: teh.on_channel_update_v2,
+        GoalEvent: teh.on_goal_begin,
+        ChannelPredictionEvent: teh.on_prediction_begin,
+        ChannelPointsCustomRewardRedemptionUpdateEvent: teh.on_redemption_update,
+        ChannelPointsCustomRewardRedemptionAddEvent: teh.on_redemption_add,
+        ChannelPointsCustomRewardUpdateEvent: teh.on_reward_update,
+        ChannelPointsCustomRewardRemoveEvent: teh.on_reward_remove,
+        ChannelPointsCustomRewardAddEvent: teh.on_reward_add,
+        ChannelPointsAutomaticRewardRedemptionAddEvent: teh.on_auto_redemption,
+        HypeTrainEvent: teh.on_hype_train_begin,
+        HypeTrainEndEvent: teh.on_hype_train_end,
+        ChannelUnbanRequestResolveEvent: teh.on_unban_request_resolve,
+        ChannelBanEvent: teh.on_ban,
+        ChannelUnbanEvent: teh.on_unban,
+        ChannelUnbanRequestCreateEvent: teh.on_unban_request_create,
+        CharityCampaignProgressEvent: teh.on_charity_progress,
+        CharityCampaignStartEvent: teh.on_charity_start,
+        CharityCampaignStopEvent: teh.on_charity_stop,
+        CharityDonationEvent: teh.on_charity_donate,
+        ChannelSubscriptionEndEvent: teh.on_subscription_end,
+        ChannelSubscriptionGiftEvent: teh.on_subscription_gift,
+        ChannelSubscriptionMessageEvent: teh.on_subscription_message,
+        ChannelShoutoutCreateEvent: teh.on_shoutout_create,
+        ChannelShoutoutReceiveEvent: teh.on_shoutout_receive,
+        ChannelCheerEvent: teh.on_channel_cheer,
+    }  
 
 
     async def on_twitch_event(self, x):
@@ -241,8 +281,8 @@ class TwitchEvents:
         try:
             
             #self.eventsub.start()
-            
-            
+            pass
+            """
             self.logger.info(f'copy&paste the following command to trigger an event')
             sub_id = await self.eventsub.listen_channel_subscribe(self.user.id, 
                                                                 self.on_twitch_event)
@@ -257,7 +297,7 @@ class TwitchEvents:
             self.sub_id_map.update({"channel.subscribe": sub_id})
             self.sub_id_map.update({"channel.raid": raid_id})
             self.sub_id_map.update({"channel.follow": follow_id})
-
+"""
            
         except Exception as e:
             self.logger.error(e)
@@ -356,19 +396,23 @@ class TwitchEvents:
         channel.channel_points_custom_reward_redemption.add
         channel.channel_points_custom_reward_redemption.update
         """
-        reward_add_id        = await self.eventsub.listen_channel_points_custom_reward_add(self.user.id, self.on_twitch_event)
-        reward_remove_id     = await self.eventsub.listen_channel_points_custom_reward_remove(self.user.id, self.on_twitch_event)
-        reward_update_id     = await self.eventsub.listen_channel_points_custom_reward_update(self.user.id, self.on_twitch_event)
-        redemption_add_id    = await self.eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self.on_twitch_event)
-        redemption_update_id = await self.eventsub.listen_channel_points_custom_reward_redemption_update(self.user.id, self.on_twitch_event)
-        auto_reward_redemption = await self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.on_twitch_event)
+        try:
+            reward_add_id        = await self.eventsub.listen_channel_points_custom_reward_add(self.user.id, self.on_twitch_event)
+            reward_remove_id     = await self.eventsub.listen_channel_points_custom_reward_remove(self.user.id, self.on_twitch_event)
+            reward_update_id     = await self.eventsub.listen_channel_points_custom_reward_update(self.user.id, self.on_twitch_event)
+            redemption_add_id    = await self.eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self.on_twitch_event)
+            redemption_update_id = await self.eventsub.listen_channel_points_custom_reward_redemption_update(self.user.id, self.on_twitch_event)
+            #auto_reward_redemption = await self.eventsub.listen_channel_points_automatic_reward_redemption_add(self.user.id, self.on_twitch_event)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
         
 
         self.sub_id_map.update({"channel.channel_points_custom_reward.add": reward_add_id})
         self.sub_id_map.update({"channel.channel_points_custom_reward.remove": reward_remove_id})
         self.sub_id_map.update({"channel.channel_points_custom_reward.update": reward_update_id})
         self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.add": redemption_add_id})
-        self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.update": redemption_update_id})
+        #self.sub_id_map.update({"channel.channel_points_custom_reward_redemption.update": redemption_update_id})
 
 
         self.logger.info("successfully subscribed to channel_point_events")
@@ -491,17 +535,37 @@ class TwitchEvents:
         channel.follow 
         channel.raid 
         """
+
+        self.logger.info(f'copy&paste the following command to trigger an event')
+        #sub_id = await self.eventsub.listen_channel_subscribe(self.user.id, self.on_twitch_event)
         raid_id = await self.eventsub.listen_channel_raid(self.on_twitch_event, 
                                                         None,self.user.id)
         follow_id = await self.eventsub.listen_channel_follow_v2(self.user.id, 
                                                                 self.user.id, 
                                                                 self.on_twitch_event)
-        sub_message_id = await self.eventsub.listen_channel_cheer(self.user.id, self.on_twitch_event)
+        self.logger.debug(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket') 
+        #self.logger.debug(f'twitch event trigger channel.subscribe -t {self.user.id} -u {sub_id} -T websocket') 
+        self.logger.debug(f'twitch event trigger channel.raid -t {self.user.id} -u {raid_id} -T websocket') 
+        #self.sub_id_map.update({"channel.subscribe": sub_id})
         self.sub_id_map.update({"channel.raid": raid_id})
         self.sub_id_map.update({"channel.follow": follow_id})
+        sub_message_id = await self.eventsub.listen_channel_cheer(self.user.id, self.on_twitch_event)
         self.sub_id_map.update({"channel.cheer": sub_message_id})
-        #self.logger.debug(f'twitch event trigger channel.subscription.message -t {self.user.id} -u {sub_message_id} -T websocket') 
 
+        """
+                raid_id = await self.eventsub.listen_channel_raid(self.on_twitch_event, 
+                                                                None,self.user.id)
+                follow_id = await self.eventsub.listen_channel_follow_v2(self.user.id, 
+                                                                        self.user.id, 
+                                                                        self.on_twitch_event)
+                sub_message_id = await self.eventsub.listen_channel_cheer(self.user.id, self.on_twitch_event)
+                
+                self.sub_id_map.update({"channel.raid": raid_id})
+                self.sub_id_map.update({"channel.follow": follow_id})
+                self.sub_id_map.update({"channel.cheer": sub_message_id})
+                
+                self.logger.debug(f'twitch event trigger channel.follow -t {self.user.id} -u {follow_id} -T websocket') 
+        """
 
     async def onChannelCheer(self, x):
         self.logger.debug(str(x))
